@@ -21,6 +21,7 @@ import {
   Workflow
 } from 'lucide-react';
 import NetcodeSimulator from './NetcodeSimulator';
+import LuauToolSuite from './LuauToolSuite';
 import { soundFX } from './audio';
 
 function GithubIcon() {
@@ -211,6 +212,7 @@ def generate_procedural_biomes(seed: int, density: float):
 
           <div className="flex items-center gap-4 text-xs md:text-sm font-medium">
             <a href="#simulator" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Netcode Lab</a>
+            <a href="#tools" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Engine Tools</a>
             <a href="#architecture" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Arsitektur</a>
             <a href="#projects" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Project</a>
             <a href="#stack" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Tech Stack</a>
@@ -310,6 +312,22 @@ def generate_procedural_biomes(seed: int, density: float):
           </div>
 
           <NetcodeSimulator />
+        </section>
+
+        {/* Functional Dev Workbench: Luau Buffer & Packet Studio */}
+        <section id="tools" className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-slate-800/80 pb-4 gap-2">
+            <div>
+              <p className="text-xs uppercase tracking-wider font-mono font-bold text-indigo-400 mb-1 flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5" />
+                <span>Interactive Dev Utilities</span>
+              </p>
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Luau Buffer & Bandwidth Workbench</h2>
+            </div>
+            <p className="text-xs text-slate-400 font-mono">Pack struct binary, generate typed module, kalkulasi tick replication budget</p>
+          </div>
+
+          <LuauToolSuite />
         </section>
 
         {/* Interactive Architecture & Code Blueprint */}

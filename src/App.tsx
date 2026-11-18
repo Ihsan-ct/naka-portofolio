@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Gamepad2, 
+  Volume2,
+  VolumeX,
   Cpu, 
   Layers, 
   Code2, 
@@ -18,6 +20,8 @@ import {
   CheckCircle2,
   Workflow
 } from 'lucide-react';
+import NetcodeSimulator from './NetcodeSimulator';
+import { soundFX } from './audio';
 
 function GithubIcon() {
   return (
@@ -33,8 +37,14 @@ export default function App() {
   const [copiedDiscord, setCopiedDiscord] = useState(false);
   const [activeTab, setActiveTab] = useState<'luau' | 'hitbox' | 'blender'>('luau');
   const [projectFilter, setProjectFilter] = useState<'all' | 'roblox' | '3d' | 'web'>('all');
+  const [isMuted, setIsMuted] = useState(soundFX.isMuted());
+
+  useEffect(() => {
+    return soundFX.subscribe((m) => setIsMuted(m));
+  }, []);
 
   const copyToClipboard = (text: string, type: 'email' | 'discord') => {
+    soundFX.playSuccess();
     navigator.clipboard.writeText(text);
     if (type === 'email') {
       setCopiedEmail(true);
@@ -200,9 +210,18 @@ def generate_procedural_biomes(seed: int, density: float):
           </div>
 
           <div className="flex items-center gap-4 text-xs md:text-sm font-medium">
+            <a href="#simulator" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Netcode Lab</a>
             <a href="#architecture" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Arsitektur</a>
             <a href="#projects" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Project</a>
             <a href="#stack" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Tech Stack</a>
+            <button
+              onClick={() => soundFX.toggleMute()}
+              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-cyan-400 transition-colors cursor-pointer"
+              title={isMuted ? "Unmute Procedural Audio" : "Mute Procedural Audio"}
+            >
+              {isMuted ? <VolumeX className="w-4 h-4 text-slate-500" /> : <Volume2 className="w-4 h-4 text-cyan-400" />}
+            </button>
+
             <a 
               href="#contact" 
               className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl transition-all font-semibold shadow-md shadow-cyan-500/20 flex items-center gap-1.5"
@@ -277,6 +296,22 @@ def generate_procedural_biomes(seed: int, density: float):
           </div>
         </section>
 
+        {/* Interactive Netcode Sandbox */}
+        <section id="simulator" className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-slate-800/80 pb-4 gap-2">
+            <div>
+              <p className="text-xs uppercase tracking-wider font-mono font-bold text-cyan-400 mb-1 flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5" />
+                <span>Live Engine Simulation</span>
+              </p>
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Authoritative Rollback Sandbox</h2>
+            </div>
+            <p className="text-xs text-slate-400 font-mono">Bandingkan visualisasi client vs snapshot server secara real-time</p>
+          </div>
+
+          <NetcodeSimulator />
+        </section>
+
         {/* Interactive Architecture & Code Blueprint */}
         <section id="architecture" className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-slate-800/80 pb-4 gap-2">
@@ -303,7 +338,7 @@ def generate_procedural_biomes(seed: int, density: float):
               {/* Tabs */}
               <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
                 <button
-                  onClick={() => setActiveTab('luau')}
+                  onClick={() => { soundFX.playClick(); setActiveTab('luau'); }}
                   className={`px-3 py-1 rounded text-xs font-mono transition-all ${
                     activeTab === 'luau' 
                       ? 'bg-cyan-500 text-slate-950 font-bold shadow' 
@@ -313,7 +348,7 @@ def generate_procedural_biomes(seed: int, density: float):
                   Netcode.luau
                 </button>
                 <button
-                  onClick={() => setActiveTab('hitbox')}
+                  onClick={() => { soundFX.playClick(); setActiveTab('hitbox'); }}
                   className={`px-3 py-1 rounded text-xs font-mono transition-all ${
                     activeTab === 'hitbox' 
                       ? 'bg-cyan-500 text-slate-950 font-bold shadow' 
@@ -323,7 +358,7 @@ def generate_procedural_biomes(seed: int, density: float):
                   HitboxRollback.luau
                 </button>
                 <button
-                  onClick={() => setActiveTab('blender')}
+                  onClick={() => { soundFX.playClick(); setActiveTab('blender'); }}
                   className={`px-3 py-1 rounded text-xs font-mono transition-all ${
                     activeTab === 'blender' 
                       ? 'bg-cyan-500 text-slate-950 font-bold shadow' 
@@ -356,7 +391,7 @@ def generate_procedural_biomes(seed: int, density: float):
             {/* Filter Buttons */}
             <div className="flex flex-wrap items-center gap-1.5 bg-slate-900/80 p-1.5 rounded-xl border border-slate-800">
               <button
-                onClick={() => setProjectFilter('all')}
+                onClick={() => { soundFX.playClick(); setProjectFilter('all'); }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   projectFilter === 'all' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
                 }`}
@@ -364,7 +399,7 @@ def generate_procedural_biomes(seed: int, density: float):
                 Semua ({projects.length})
               </button>
               <button
-                onClick={() => setProjectFilter('roblox')}
+                onClick={() => { soundFX.playClick(); setProjectFilter('roblox'); }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   projectFilter === 'roblox' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
                 }`}
@@ -372,7 +407,7 @@ def generate_procedural_biomes(seed: int, density: float):
                 Roblox Systems
               </button>
               <button
-                onClick={() => setProjectFilter('3d')}
+                onClick={() => { soundFX.playClick(); setProjectFilter('3d'); }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   projectFilter === '3d' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
                 }`}
@@ -380,7 +415,7 @@ def generate_procedural_biomes(seed: int, density: float):
                 3D & Blender
               </button>
               <button
-                onClick={() => setProjectFilter('web')}
+                onClick={() => { soundFX.playClick(); setProjectFilter('web'); }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   projectFilter === 'web' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
                 }`}

@@ -11,7 +11,6 @@ import {
   ShieldCheck, 
   Box, 
   Activity, 
-  ExternalLink, 
   Mail, 
   Copy, 
   Check, 
@@ -20,16 +19,12 @@ import {
   CheckCircle2,
   Workflow,
   Sparkles,
-  Eye,
-  X,
-  Maximize2
 } from 'lucide-react';
 import NetcodeSimulator from './NetcodeSimulator';
 import LuauToolSuite from './LuauToolSuite';
 import { soundFX } from './audio';
 import { Award } from 'lucide-react';
 import { RobloxProfileCard } from './RobloxProfileCard';
-import { masterIslandShots, type IslandShot } from './MasterIslandsData';
 import Track3DViewer from './Track3DViewer';
 
 function GithubIcon() {
@@ -41,18 +36,13 @@ function GithubIcon() {
   );
 }
 
-const summitShots: IslandShot[] = masterIslandShots;
 
 export default function App() {
-  const [islandFilter, setIslandFilter] = useState<'all' | 'summit' | 'bc' | 'CPEnergy'>('all');
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedDiscord, setCopiedDiscord] = useState(false);
   const [activeTab, setActiveTab] = useState<'luau' | 'hitbox' | 'blender'>('luau');
   const [projectFilter, setProjectFilter] = useState<'all' | 'roblox' | '3d' | 'web'>('all');
   const [isMuted, setIsMuted] = useState(soundFX.isMuted());
-  const [selectedShot, setSelectedShot] = useState<string | null>(null);
-  const [shotTitle, setShotTitle] = useState<string>('');
-  const [shotDesc, setShotDesc] = useState<string>('');
 
   useEffect(() => {
     return soundFX.subscribe((m) => setIsMuted(m));
@@ -208,7 +198,7 @@ return CheckpointManager`
     {
       title: 'kit naka gratis (Comprehensive Game Framework)',
       badge: 'Universe 10764643598 • Flagship Core',
-      image: '/shots/08_core_close.png',
+      icon: Gamepad2, gradient: 'from-cyan-500/20 via-blue-500/10 to-transparent',
       tag: 'roblox',
       category: 'Roblox Engine / Core Architecture',
       description: 'Framework modular full-stack Luau (98+ script) untuk game skala produksi. Dilengkapi Rojo 7.7.1 pipeline, automated contract test suite (30/31 passing), ProfileStore, dan integrasi TopbarPlus v3.4.0.',
@@ -218,7 +208,7 @@ return CheckpointManager`
     {
       title: 'Rintangan Naka (Competitive Obby & Racing Engine)',
       badge: 'Universe 10775972892 • Competitive Engine',
-      image: '/shots/07_bridge_low.png',
+      icon: Flame, gradient: 'from-amber-500/20 via-orange-500/10 to-transparent',
       tag: 'roblox',
       category: 'Roblox Gameplay & Physics',
       description: 'Sistem balap kompetitif terverifikasi server: checkpoint sequence tracking anti-skip, dynamic race HUD, server-authoritative timer ms, dan replay state recorder.',
@@ -228,7 +218,7 @@ return CheckpointManager`
     {
       title: 'Pesta Naka (Social Party Arena & Realtime Sync)',
       badge: 'Universe 10777142594 • Backend Pipeline',
-      image: '/shots/01_front_iso.png',
+      icon: Activity, gradient: 'from-violet-500/20 via-indigo-500/10 to-transparent',
       tag: 'roblox',
       category: 'Backend & Distributed DataStore',
       description: 'Infrastruktur backend leaderboard summit obby dan speedrun global. Menggunakan OrderedDataStore dengan rate-limit debounce, retry exponential backoff, dan instant ranking sync.',
@@ -237,7 +227,7 @@ return CheckpointManager`
     },
     {
       title: 'NAKA Satchel Hotbar & Spatial 3D Ui Suite',
-      image: '/shots/02_back_iso.png',
+      icon: Layers, gradient: 'from-emerald-500/20 via-teal-500/10 to-transparent',
       tag: 'roblox',
       category: 'Client UX & Spatial Systems',
       description: 'Sistem hotbar kustom responsif mobile/desktop pengganti default inventory Roblox. Terintegrasi TopbarPlus v3.4.0, spatial 3D nameplates, dan UI culling off-screen berkinerja tinggi.',
@@ -247,7 +237,7 @@ return CheckpointManager`
     },
     {
       title: 'Saweria Monetization & Roblox License Gateway',
-      image: '/shots/04_right_iso.png',
+      icon: Zap, gradient: 'from-yellow-500/20 via-amber-500/10 to-transparent',
       tag: 'web',
       category: 'API Integration & License Engine',
       description: 'Gateway integrasi donasi Saweria dan validasi lisensi modul Roblox secara real-time. Memvalidasi webhook server-to-server dan mendistribusikan in-game perk seketika tanpa restart server.',
@@ -257,8 +247,8 @@ return CheckpointManager`
     },
     {
       title: 'Workspace.PULAU 3D Master Suite (summit, bc, CPEnergy)',
-      badge: 'Audited 3D Models • Level Art',
-      image: '/shots/05_top.png',
+      badge: 'Authentic 3D Models - Live Viewport',
+      icon: Box, gradient: 'from-cyan-500/20 via-teal-500/10 to-transparent', actionLink: '#viewport3d', actionLabel: 'Buka di 3D Viewport',
       tag: '3d',
       category: 'Blender 3D & Technical Level Design',
       description: 'Level track jalan raya modular (v4 & v5 clean) dan summit mountain obby. Didesain dengan snapped vertex alignment, zero-gap topology, optimized collision geometry, dan custom PBR material.',
@@ -267,7 +257,6 @@ return CheckpointManager`
     }
   ];
 
-  const filteredShots = islandFilter === 'all' ? masterIslandShots : masterIslandShots.filter(s => s.island === islandFilter);
   const filteredProjects = projectFilter === 'all' 
     ? projects 
     : projects.filter(p => p.tag === projectFilter);
@@ -310,7 +299,6 @@ return CheckpointManager`
             <a href="#tools" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Engine Tools</a>
             <a href="#architecture" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Arsitektur</a>
             <a href="#projects" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Project</a>
-            <a href="#renders" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Renders</a>
             <a href="#stack" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Tech Stack</a>
             <button
               onClick={() => soundFX.toggleMute()}
@@ -585,37 +573,9 @@ return CheckpointManager`
                 className="group bg-slate-900/60 hover:bg-slate-900 border border-slate-800/80 hover:border-cyan-500/50 p-6 rounded-2xl flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 shadow-xl hover:shadow-cyan-500/10"
               >
                 <div className="space-y-4">
-                  {p.image && (
-                    <div 
-                      onClick={() => {
-                        soundFX.playClick();
-                        setSelectedShot(p.image);
-                        setShotTitle(p.title);
-                        setShotDesc(p.description);
-                      }}
-                      className="relative w-full h-44 rounded-xl overflow-hidden mb-4 bg-slate-950 border border-slate-800/80 cursor-pointer group/img"
-                    >
-                      <img 
-                        src={p.image} 
-                        alt={p.title} 
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105" 
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-80 group-hover/img:opacity-50 transition-opacity" />
-                      <div className="absolute bottom-2.5 right-2.5 px-2 py-1 rounded bg-slate-900/90 border border-slate-700/60 text-[10px] font-mono text-cyan-300 flex items-center gap-1 opacity-0 group-hover/img:opacity-100 transition-opacity">
-                        <Eye className="w-3 h-3" />
-                        <span>Inspect 3D Render</span>
-                      </div>
-                    </div>
-                  )}
+                  {/* Card Visual Banner */}                  <div className={`relative w-full h-32 rounded-xl overflow-hidden mb-4 bg-gradient-to-br ${p.gradient || 'from-cyan-500/20 via-slate-900 to-slate-950'} border border-slate-800/80 p-4 flex flex-col justify-between`}>                    <div className="flex items-center justify-between">                      <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-700/60 text-cyan-400 backdrop-blur-sm shadow-md">                        <p.icon className="w-5 h-5" />                      </div>                      <span className="text-[10px] font-mono font-bold tracking-wide uppercase px-2.5 py-1 rounded-md bg-slate-950/80 text-cyan-400 border border-cyan-500/30 backdrop-blur-sm">                        {p.badge}                      </span>                    </div>                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">                      <span>{p.category}</span>                      {p.actionLink && (                        <a                           href={p.actionLink}                          onClick={() => soundFX.playClick()}                          className="flex items-center gap-1 text-cyan-300 hover:text-white font-semibold underline underline-offset-2"                        >                          <span>{p.actionLabel || 'View'}</span>                          <ChevronRight className="w-3.5 h-3.5" />                        </a>                      )}                    </div>                  </div>                  
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono font-bold tracking-wide uppercase px-2.5 py-1 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                      {p.badge}
-                    </span>
-                    <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-cyan-400 transition-colors" />
-                  </div>
-
-                  <div>
+                                    <div>
                     <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors leading-snug">
                       {p.title}
                     </h3>
@@ -646,60 +606,7 @@ return CheckpointManager`
           </div>
         </section>
 
-                {/* Summit Obby 12 Camera Angles Showcase */}
-        <section id="renders" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-slate-800/80 pb-4 gap-2">
-            <div>
-              <p className="text-xs uppercase tracking-wider font-mono font-bold text-cyan-400 mb-1 flex items-center gap-1.5">
-                <Box className="w-3.5 h-3.5" />
-                <span>Blender 3D Camera Angles</span>
-              </p>
-              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Workspace.PULAU 3D Master Suite</h2>
-            </div>
-            <p className="text-xs text-slate-400 font-mono mt-1">All 3 audited islands: summit, bc, CPEnergy rendered in Blender Cycles</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5 bg-slate-900/80 p-1.5 rounded-xl border border-slate-800">
-              <button onClick={() => { soundFX.playClick(); setIslandFilter('all'); }} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${islandFilter === 'all' ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm shadow-cyan-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>All Islands (12)</button>
-              <button onClick={() => { soundFX.playClick(); setIslandFilter('summit'); }} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${islandFilter === 'summit' ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm shadow-cyan-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>Summit Citadel (4)</button>
-              <button onClick={() => { soundFX.playClick(); setIslandFilter('bc'); }} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${islandFilter === 'bc' ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm shadow-cyan-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>Basecamp Sci-Fi (4)</button>
-              <button onClick={() => { soundFX.playClick(); setIslandFilter('CPEnergy'); }} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${islandFilter === 'CPEnergy' ? 'bg-cyan-500 text-slate-950 font-bold shadow-sm shadow-cyan-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>Checkpoint Energy (4)</button>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredShots.map((shot) => (
-              <div
-                key={shot.id}
-                onClick={() => {
-                  soundFX.playClick();
-                  setSelectedShot(shot.path);
-                  setShotTitle(shot.title);
-                  setShotDesc(shot.desc);
-                }}
-                className="group relative rounded-xl overflow-hidden bg-slate-900/60 border border-slate-800/80 hover:border-cyan-500/60 cursor-pointer transition-all duration-300 hover:-translate-y-1 shadow-md hover:shadow-cyan-500/10"
-              >
-                <div className="aspect-video w-full overflow-hidden bg-slate-950 relative">
-                  <img 
-                    src={shot.path} 
-                    alt={shot.title} 
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                    loading="lazy"
-                  />
-                  <div className="absolute top-2 left-2"><span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold uppercase bg-slate-950/80 backdrop-blur-sm text-cyan-400 border border-cyan-500/30">{shot.island}</span></div>
-                </div>
-                <div className="p-3 bg-slate-900/90 border-t border-slate-800/80">
-                  <p className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors truncate">
-                    {shot.title}
-                  </p>
-                  <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                    {shot.polyStats}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Why My Code Doesn't Lag (Architecture Principles) */}
+                {/* Why My Code Doesn't Lag (Architecture Principles) */}
         <section className="space-y-8">
           <div className="border-b border-slate-800/80 pb-4">
             <p className="text-xs uppercase tracking-wider font-mono font-bold text-emerald-400 mb-1 flex items-center gap-1.5">
@@ -924,70 +831,6 @@ return CheckpointManager`
         </footer>
 
       </div>
-
-      {/* Lightbox Modal */}
-      {selectedShot && (
-        <div 
-          onClick={() => setSelectedShot(null)}
-          className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200"
-        >
-          <div 
-            onClick={(e) => e.stopPropagation()}
-            className="relative max-w-5xl w-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col"
-          >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950/60">
-              <div>
-                <h4 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                  <Maximize2 className="w-4 h-4" />
-                  <span>{shotTitle}</span>
-                </h4>
-                <p className="text-xs text-slate-400 mt-0.5">{shotDesc}</p>
-              </div>
-              <button
-                onClick={() => {
-                  soundFX.playClick();
-                  setSelectedShot(null);
-                }}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Image View */}
-            <div className="w-full max-h-[70vh] bg-slate-950 flex items-center justify-center p-2 overflow-hidden">
-              <img
-                src={selectedShot}
-                alt={shotTitle}
-                className="max-h-[68vh] w-auto max-w-full object-contain rounded-lg"
-              />
-            </div>
-
-            {/* Thumbnail Strip */}
-            <div className="px-4 py-3 bg-slate-950/80 border-t border-slate-800 flex items-center gap-2 overflow-x-auto">
-              {summitShots.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => {
-                    soundFX.playClick();
-                    setSelectedShot(s.path);
-                    setShotTitle(s.title);
-                    setShotDesc(s.desc);
-                  }}
-                  className={`relative w-16 h-10 rounded-lg overflow-hidden shrink-0 border transition-all cursor-pointer ${
-                    selectedShot === s.path 
-                      ? 'border-cyan-400 ring-2 ring-cyan-400/40 scale-105' 
-                      : 'border-slate-800 opacity-60 hover:opacity-100'
-                  }`}
-                >
-                  <img src={s.path} alt={s.title} className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );

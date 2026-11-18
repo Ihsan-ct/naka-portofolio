@@ -18,8 +18,13 @@ import {
   ChevronRight, 
   Flame, 
   CheckCircle2,
-  Workflow
+  Workflow,
+  Sparkles,
+  Eye,
+  X,
+  Maximize2
 } from 'lucide-react';
+import Track3DViewer from './Track3DViewer';
 import NetcodeSimulator from './NetcodeSimulator';
 import LuauToolSuite from './LuauToolSuite';
 import { soundFX } from './audio';
@@ -33,12 +38,30 @@ function GithubIcon() {
   );
 }
 
+const summitShots = [
+  { id: '08_core_close', path: '/shots/08_core_close.png', title: 'Summit Apex Core & Neon Bridge', desc: 'Apex core section with emissive ring lights and high-contrast checkpoint gates.' },
+  { id: '07_bridge_low', path: '/shots/07_bridge_low.png', title: 'Low-Angle Race Bridge & Railing', desc: 'Dramatic low-perspective render highlighting snapped modular road girders.' },
+  { id: '01_front_iso', path: '/shots/01_front_iso.png', title: 'Front Isometric Overview', desc: 'Full-stage isometric layout showcasing multi-tier obby altitude progression.' },
+  { id: '02_back_iso', path: '/shots/02_back_iso.png', title: 'Back Isometric & Descent Sector', desc: 'Reverse angle displaying technical mountain drop and speed pad alignments.' },
+  { id: '03_left_iso', path: '/shots/03_left_iso.png', title: 'West Ridge Isometric', desc: 'Side profile of vertical jump platforms and zero-gap collider geometry.' },
+  { id: '04_right_iso', path: '/shots/04_right_iso.png', title: 'East Climb & Apex Spire', desc: 'Elevation profile climbing toward the rotating cyber apex crystal.' },
+  { id: '05_top', path: '/shots/05_top.png', title: 'Orthographic Top-Down Layout', desc: 'Blueprint view verifying grid snapping, checkpoint spacing, and collision boundaries.' },
+  { id: '06_ground_entry', path: '/shots/06_ground_entry.png', title: 'Ground Starter Checkpoint', desc: 'Player spawn perspective with grid floor and directional lighting.' },
+  { id: '09_ring_accent', path: '/shots/09_ring_accent.png', title: 'Emissive Apex Ring & Crystal', desc: 'Close-up macro shot of the procedural octahedron crystal and rotating halo.' },
+  { id: '10_descent_wide', path: '/shots/10_descent_wide.png', title: 'Wide Panoramic Descent', desc: 'Cinematic wide focal view across the entire level architecture.' },
+  { id: '11_hero_dramatic', path: '/shots/11_hero_dramatic.png', title: 'Hero Cyberpunk Perspective', desc: 'High-octane neon night lighting preset with volumetric cyan and magenta contrast.' },
+  { id: '12_cinematic_low', path: '/shots/12_cinematic_low.png', title: 'Cinematic Runway Low Angle', desc: 'Speedway straightaway looking up toward the elevated platforms.' },
+];
+
 export default function App() {
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [copiedDiscord, setCopiedDiscord] = useState(false);
   const [activeTab, setActiveTab] = useState<'luau' | 'hitbox' | 'blender'>('luau');
   const [projectFilter, setProjectFilter] = useState<'all' | 'roblox' | '3d' | 'web'>('all');
   const [isMuted, setIsMuted] = useState(soundFX.isMuted());
+  const [selectedShot, setSelectedShot] = useState<string | null>(null);
+  const [shotTitle, setShotTitle] = useState<string>('');
+  const [shotDesc, setShotDesc] = useState<string>('');
 
   useEffect(() => {
     return soundFX.subscribe((m) => setIsMuted(m));
@@ -181,6 +204,7 @@ return CheckpointManager`
   const projects = [
     {
       title: 'Kit Naka: Comprehensive Game Framework',
+      image: '/shots/08_core_close.png',
       tag: 'roblox',
       category: 'Roblox Engine / Core Architecture',
       description: 'Framework modular full-stack Luau (98+ script) untuk game skala produksi. Dilengkapi Rojo 7.7.1 pipeline, automated contract test suite (30/31 passing), ProfileStore, dan integrasi TopbarPlus v3.4.0.',
@@ -190,6 +214,7 @@ return CheckpointManager`
     },
     {
       title: 'Competitive Race Engine & League System',
+      image: '/shots/07_bridge_low.png',
       tag: 'roblox',
       category: 'Roblox Gameplay & Physics',
       description: 'Sistem balap kompetitif terverifikasi server: checkpoint sequence tracking anti-skip, dynamic race HUD, server-authoritative timer ms, dan replay state recorder.',
@@ -199,6 +224,7 @@ return CheckpointManager`
     },
     {
       title: 'Global Summit & Speedrun Leaderboard Stack',
+      image: '/shots/01_front_iso.png',
       tag: 'roblox',
       category: 'Backend & Distributed DataStore',
       description: 'Infrastruktur backend leaderboard summit obby dan speedrun global. Menggunakan OrderedDataStore dengan rate-limit debounce, retry exponential backoff, dan instant ranking sync.',
@@ -207,7 +233,8 @@ return CheckpointManager`
       badge: 'Backend Pipeline'
     },
     {
-      title: 'NAKA Satchel Hotbar & Spatial 3D UI Suite',
+      title: 'NAKA Satchel Hotbar & Spatial 3D Ui Suite',
+      image: '/shots/02_back_iso.png',
       tag: 'roblox',
       category: 'Client UX & Spatial Systems',
       description: 'Sistem hotbar kustom responsif mobile/desktop pengganti default inventory Roblox. Terintegrasi TopbarPlus v3.4.0, spatial 3D nameplates, dan UI culling off-screen berkinerja tinggi.',
@@ -217,6 +244,7 @@ return CheckpointManager`
     },
     {
       title: 'Saweria Monetization & Roblox License Gateway',
+      image: '/shots/04_right_iso.png',
       tag: 'web',
       category: 'API Integration & License Engine',
       description: 'Gateway integrasi donasi Saweria dan validasi lisensi modul Roblox secara real-time. Memvalidasi webhook server-to-server dan mendistribusikan in-game perk seketika tanpa restart server.',
@@ -226,6 +254,7 @@ return CheckpointManager`
     },
     {
       title: 'Modular Street Track & Summit Mountain Level Design',
+      image: '/shots/05_top.png',
       tag: '3d',
       category: 'Blender 3D & Technical Level Design',
       description: 'Level track jalan raya modular (v4 & v5 clean) dan summit mountain obby. Didesain dengan snapped vertex alignment, zero-gap topology, optimized collision geometry, dan custom PBR material.',
@@ -271,10 +300,12 @@ return CheckpointManager`
           </div>
 
           <div className="flex items-center gap-4 text-xs md:text-sm font-medium">
+            <a href="#viewport3d" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">3D Viewport</a>
             <a href="#simulator" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Netcode Lab</a>
             <a href="#tools" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Engine Tools</a>
             <a href="#architecture" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Arsitektur</a>
             <a href="#projects" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Project</a>
+            <a href="#renders" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Renders</a>
             <a href="#stack" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Tech Stack</a>
             <button
               onClick={() => soundFX.toggleMute()}
@@ -312,6 +343,14 @@ return CheckpointManager`
 
           {/* Quick Actions */}
           <div className="flex flex-wrap items-center gap-3 pt-2">
+            <a
+              href="#viewport3d"
+              className="px-6 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-cyan-500/20 flex items-center gap-2 text-sm"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Launch 3D Viewport</span>
+            </a>
+
             <a
               href="#projects"
               className="px-6 py-3.5 bg-white text-slate-950 font-bold rounded-xl hover:bg-slate-200 transition-all shadow-lg flex items-center gap-2 text-sm"
@@ -356,6 +395,22 @@ return CheckpointManager`
               </div>
             ))}
           </div>
+        </section>
+
+        {/* Interactive 3D Engine Viewport */}
+        <section id="viewport3d" className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-slate-800/80 pb-4 gap-2">
+            <div>
+              <p className="text-xs uppercase tracking-wider font-mono font-bold text-cyan-400 mb-1 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>WebGL 3D Engine Showcase</span>
+              </p>
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Interactive Level & Track Inspector</h2>
+            </div>
+            <p className="text-xs text-slate-400 font-mono">Rotate, zoom & switch lighting presets across real production assets</p>
+          </div>
+
+          <Track3DViewer />
         </section>
 
         {/* Interactive Netcode Sandbox */}
@@ -511,6 +566,29 @@ return CheckpointManager`
                 className="group bg-slate-900/60 hover:bg-slate-900 border border-slate-800/80 hover:border-cyan-500/50 p-6 rounded-2xl flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 shadow-xl hover:shadow-cyan-500/10"
               >
                 <div className="space-y-4">
+                  {p.image && (
+                    <div 
+                      onClick={() => {
+                        soundFX.playClick();
+                        setSelectedShot(p.image);
+                        setShotTitle(p.title);
+                        setShotDesc(p.description);
+                      }}
+                      className="relative w-full h-44 rounded-xl overflow-hidden mb-4 bg-slate-950 border border-slate-800/80 cursor-pointer group/img"
+                    >
+                      <img 
+                        src={p.image} 
+                        alt={p.title} 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105" 
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent opacity-80 group-hover/img:opacity-50 transition-opacity" />
+                      <div className="absolute bottom-2.5 right-2.5 px-2 py-1 rounded bg-slate-900/90 border border-slate-700/60 text-[10px] font-mono text-cyan-300 flex items-center gap-1 opacity-0 group-hover/img:opacity-100 transition-opacity">
+                        <Eye className="w-3 h-3" />
+                        <span>Inspect 3D Render</span>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono font-bold tracking-wide uppercase px-2.5 py-1 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
                       {p.badge}
@@ -543,6 +621,52 @@ return CheckpointManager`
                       {t}
                     </span>
                   ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+                {/* Summit Obby 12 Camera Angles Showcase */}
+        <section id="renders" className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-slate-800/80 pb-4 gap-2">
+            <div>
+              <p className="text-xs uppercase tracking-wider font-mono font-bold text-cyan-400 mb-1 flex items-center gap-1.5">
+                <Box className="w-3.5 h-3.5" />
+                <span>Blender 3D Camera Angles</span>
+              </p>
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Summit Obby Production Layout</h2>
+            </div>
+            <p className="text-xs text-slate-400 font-mono">12 high-resolution render perspectives rendered in Blender Cycles</p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {summitShots.map((shot) => (
+              <div
+                key={shot.id}
+                onClick={() => {
+                  soundFX.playClick();
+                  setSelectedShot(shot.path);
+                  setShotTitle(shot.title);
+                  setShotDesc(shot.desc);
+                }}
+                className="group relative rounded-xl overflow-hidden bg-slate-900/60 border border-slate-800/80 hover:border-cyan-500/60 cursor-pointer transition-all duration-300 hover:-translate-y-1 shadow-md hover:shadow-cyan-500/10"
+              >
+                <div className="aspect-video w-full overflow-hidden bg-slate-950">
+                  <img 
+                    src={shot.path} 
+                    alt={shot.title} 
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                    loading="lazy"
+                  />
+                </div>
+                <div className="p-3 bg-slate-900/90 border-t border-slate-800/80">
+                  <p className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors truncate">
+                    {shot.title}
+                  </p>
+                  <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                    {shot.desc}
+                  </p>
                 </div>
               </div>
             ))}
@@ -673,6 +797,9 @@ return CheckpointManager`
               <ul className="space-y-2 text-xs text-slate-300">
                 <li className="flex items-center gap-2 font-mono">
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                  <span>Three.js WebGL Engine</span></li>
+                <li className="flex items-center gap-2 font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                   <span>React 19 & TypeScript</span>
                 </li>
                 <li className="flex items-center gap-2 font-mono">
@@ -771,6 +898,71 @@ return CheckpointManager`
         </footer>
 
       </div>
+
+      {/* Lightbox Modal */}
+      {selectedShot && (
+        <div 
+          onClick={() => setSelectedShot(null)}
+          className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-200"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-5xl w-full bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950/60">
+              <div>
+                <h4 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                  <Maximize2 className="w-4 h-4" />
+                  <span>{shotTitle}</span>
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">{shotDesc}</p>
+              </div>
+              <button
+                onClick={() => {
+                  soundFX.playClick();
+                  setSelectedShot(null);
+                }}
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Image View */}
+            <div className="w-full max-h-[70vh] bg-slate-950 flex items-center justify-center p-2 overflow-hidden">
+              <img
+                src={selectedShot}
+                alt={shotTitle}
+                className="max-h-[68vh] w-auto max-w-full object-contain rounded-lg"
+              />
+            </div>
+
+            {/* Thumbnail Strip */}
+            <div className="px-4 py-3 bg-slate-950/80 border-t border-slate-800 flex items-center gap-2 overflow-x-auto">
+              {summitShots.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    soundFX.playClick();
+                    setSelectedShot(s.path);
+                    setShotTitle(s.title);
+                    setShotDesc(s.desc);
+                  }}
+                  className={`relative w-16 h-10 rounded-lg overflow-hidden shrink-0 border transition-all cursor-pointer ${
+                    selectedShot === s.path 
+                      ? 'border-cyan-400 ring-2 ring-cyan-400/40 scale-105' 
+                      : 'border-slate-800 opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <img src={s.path} alt={s.title} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

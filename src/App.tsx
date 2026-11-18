@@ -24,7 +24,6 @@ import {
   X,
   Maximize2
 } from 'lucide-react';
-import Track3DViewer from './Track3DViewer';
 import NetcodeSimulator from './NetcodeSimulator';
 import LuauToolSuite from './LuauToolSuite';
 import { soundFX } from './audio';
@@ -397,21 +396,6 @@ return CheckpointManager`
           </div>
         </section>
 
-        {/* Interactive 3D Engine Viewport */}
-        <section id="viewport3d" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-slate-800/80 pb-4 gap-2">
-            <div>
-              <p className="text-xs uppercase tracking-wider font-mono font-bold text-cyan-400 mb-1 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>WebGL 3D Engine Showcase</span>
-              </p>
-              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Interactive Level & Track Inspector</h2>
-            </div>
-            <p className="text-xs text-slate-400 font-mono">Rotate, zoom & switch lighting presets across real production assets</p>
-          </div>
-
-          <Track3DViewer />
-        </section>
 
         {/* Interactive Netcode Sandbox */}
         <section id="simulator" className="space-y-6">

@@ -57,121 +57,181 @@ export default function App() {
   };
 
   const metrics = [
-    { label: 'Target Physics & Render', value: '60 FPS', detail: 'Zero frame drop on low-end mobile' },
-    { label: 'Replication Latency', value: '< 20ms', detail: 'Buffer payload & packet compression' },
-    { label: 'Codebase Type Safety', value: '100%', detail: '--!strict Luau architecture' },
+    { label: 'Modular Luau Scripts', value: '98+ Files', detail: 'Rojo 7.7.1 DataModel sync pipeline' },
+    { label: 'Physics & Render Target', value: '60 FPS', detail: 'Zero frame drop on low-end mobile' },
+    { label: 'Automated Test Specs', value: '30/31 Pass', detail: 'ArchitectureSpec & RuntimeSmokeSpec' },
     { label: 'Architecture Security', value: 'Zero Trust', detail: 'Server-authoritative anti-exploit' },
   ];
 
   const codeSnippets = {
     luau: `--!strict
--- [Vanguard Network Replication Engine]
+local ServerStorage = game:GetService("ServerStorage")
+local modules = ServerStorage:WaitForChild("NakaStudio"):WaitForChild("Modules")
+local Config = require(modules:WaitForChild("CoreGameConfig"))
+local Runner = require(modules:WaitForChild("OrderedLeaderboardRunner"))
+local boardModel = workspace:WaitForChild("NakaStudio"):WaitForChild("Leaderboard"):WaitForChild("RaceWinners"):WaitForChild("Board")
+
+local runner = Runner.new({
+	board = boardModel,
+	dataStoreName = Config.DataStore.RaceWinsLeaderboardName,
+	logPrefix = "RaceWinsLeaderboard",
+	ascending = false,
+	startupDelay = 8,
+	formatValue = function(value)
+		return string.format("%d WIN", math.max(0, math.floor(tonumber(value) or 0)))
+	end,
+	filterEntry = function(entry)
+		return (tonumber(entry.value) or 0) > 0
+	end,
+	settings = {
+		MaxPlayers=20, UpdateInterval=60, EnableAnimations=true, AnimateTopN=10,
+		BatchSize=10, BatchDelay=0.05, TweenCleanupInterval=120, FetchCount=80,
+		DataStoreRetryCount=3, DataStoreRetryDelay=3,
+		ExcludedUserIds={}, ExcludedUsernames={},
+	},
+})
+game:BindToClose(function() runner:destroy() end)
+runner:start()`,
+    hitbox: `--!strict
+local tests = {}
+local function test(name, callback) table.insert(tests, {name=name, run=callback}) end
+local function expect(condition, message) if not condition then error(message, 2) end end
+
+test("DataStore modules are server-only", function()
+	expect(game.ServerStorage.NakaStudio.Modules:FindFirstChild("ProfileStore") ~= nil, "ProfileStore missing server-side")
+	expect(game.ServerStorage.NakaStudio.Modules:FindFirstChild("SafeDataStore") ~= nil, "SafeDataStore missing server-side")
+	expect(game.ReplicatedStorage:FindFirstChild("ProfileStore", true) == nil, "ProfileStore leaked to client")
+	expect(game.ReplicatedStorage:FindFirstChild("SafeDataStore", true) == nil, "SafeDataStore leaked to client")
+end)
+
+-- [NAKA 20261031] Tes lama "Kit admin uses System Health without duplicate moderation" ditulis ulang:
+-- tab Health + InfoRow header DIHAPUS permanen (keputusan user, restyle AdminPanel — lihat Memory adminpanel_restyle).
+-- Sisa kontrak lama (tanpa Adonis/duplikat moderasi) tetap dijaga di sini.
+test("AdminPanel has no dead tabs", function()
+	local admin = game.StarterGui.AdminPanel
+	expect(admin.MainFrame.Selection:FindFirstChild("Health") == nil, "dead Health tab remains")
+	expect(admin.MainFrame.Header:FindFirstChild("InfoRow") == nil, "dead InfoRow remains")
+	expect(admin.MainFrame.Selection:FindFirstChild("Adonis") == nil, "Adonis tab remains")
+	expect(admin.AdminModules:FindFirstChild("ModerationClient") == nil, "duplicate moderation client remains")
+	expect(admin.AdminModules:FindFirstChild("HeaderInfoSync") == nil, "orphaned HeaderInfoSync remains")
+	expect(game.ServerScriptService.Systems:FindFirstChild("AdminModerationServer") == nil, "duplicate moderation server remains")
+end)
+
+test("Moderation remotes are removed", function()
+	local remotes=game.ReplicatedStorage.NakaStudio.Remotes.Admin
+	for _, name in {"KickPlayer","BringPlayer","GotoPlayer","HealPlayer","SetTime","SetGravity"} do
+		expect(remotes:FindFirstChild(name) == nil, name.." remote remains")
+	end
+end)
+
+return tests`,
+    blender: `--!strict
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local NetworkEngine = {}
-NetworkEngine.__index = NetworkEngine
+local CheckpointManager = {}
 
-type PacketSnapshot = {
-    entityId: number,
-    position: Vector3,
-    velocity: Vector3,
-    timestamp: number
-}
+local cpBalapFolder   = nil
+local Config          = nil
+local RaceState       = nil
+local onChampionFinish = nil
 
-function NetworkEngine.compressSnapshot(snapshot: PacketSnapshot): buffer
-    local b = buffer.create(20)
-    buffer.writeu32(b, 0, snapshot.entityId)
-    buffer.writef32(b, 4, snapshot.position.X)
-    buffer.writef32(b, 8, snapshot.position.Y)
-    buffer.writef32(b, 12, snapshot.position.Z)
-    buffer.writef32(b, 16, snapshot.timestamp)
-    return b
+local cachedCPParts    = {}
+local cachedMaxCP       = 0
+local cachedFinishPart  = nil
+local cpConnections     = {}
+local onLapComplete    = nil
+local RaceEngineHasSlot = nil
+local lastTouchData = {}
+
+local function getNotifyRemote(): RemoteEvent?
+	local rs = ReplicatedStorage:FindFirstChild("RaceRemotes")
+	local notify = rs and rs:FindFirstChild("NotifyRaceNotif")
+	if notify and notify:IsA("RemoteEvent") then
+		return notify
+	end
+	return nil
 end
 
-return NetworkEngine`,
-    hitbox: `--!strict
--- [Spatial Rollback & Spatial Query Hitbox]
-local Workspace = game:GetService("Workspace")
+function CheckpointManager.Init(config, raceState, folder, championCallback, lapCallback, hasChampionSlotFn)
+	Config          = config
+	RaceState       = raceState
+	cpBalapFolder   = folder
+	onChampionFinish = championCallback
+	onLapComplete    = lapCallback
+	RaceEngineHasSlot = hasChampionSlotFn
 
-local function castAuthoritativeHitbox(originCFrame: CFrame, size: Vector3, filter: {Instance}): {RaycastResult}
-    local overlapParams = OverlapParams.new()
-    overlapParams.FilterType = RaycastFilterType.Exclude
-    overlapParams.FilterDescendantsInstances = filter
-    overlapParams.MaxParts = 8
-    
-    local hitParts = Workspace:GetPartBoundsInBox(originCFrame, size, overlapParams)
-    -- Server-side rollback confirmation logic here
-    return hitParts
-end`,
-    blender: `# [Blender 3D Procedural Generator Pipeline]
-import bpy
-import bmesh
+	-- Enforce CanTouch on all CP parts in folder at startup
+	if cpBalapFolder then
+		for _, child in ipairs(cpBalapFolder:GetChildren()) do
+			if child:IsA("BasePart") then
+				child.CanTouch = true
+			elseif child:IsA("Model") then
+				for _, sub in ipairs(child:GetDescendants()) do
+					if sub:IsA("BasePart") then sub.CanTouch = true end
+				end
+			end
+		end
+	end
+end
 
-def generate_procedural_biomes(seed: int, density: float):
-    # Automated Geometry Nodes modifier setup
-    obj = bpy.context.active_object
-    mod = obj.modifiers.new(name="ProceduralScatter", type='NODES')
-    nodes = mod.node_group.nodes
-    
-    # Configure spatial seeds & instancing distribution
-    print(f"[Pipeline] Biome seeded with {seed} at density {density}")`
+return CheckpointManager`
   };
 
   const projects = [
     {
-      title: 'Vanguard Multiplayer Combat Framework',
+      title: 'Kit Naka: Comprehensive Game Framework',
       tag: 'roblox',
-      category: 'Roblox Engine / Netcode',
-      description: 'Arsitektur gameplay real-time dengan lag compensation, predictive client hitboxes, dan server-authoritative validation bebas exploit.',
-      features: ['Buffer network payload', '60 FPS rollback prediction', 'Component-based OOP'],
-      tech: ['Luau Strict', 'Roblox Studio', 'Netcode', 'Spatial Query'],
-      badge: 'Core Framework'
+      category: 'Roblox Engine / Core Architecture',
+      description: 'Framework modular full-stack Luau (98+ script) untuk game skala produksi. Dilengkapi Rojo 7.7.1 pipeline, automated contract test suite (30/31 passing), ProfileStore, dan integrasi TopbarPlus v3.4.0.',
+      features: ['98+ Modular Luau Scripts', '30/31 Passing Contract Tests', 'Rojo 7.7.1 DataModel Sync'],
+      tech: ['Luau Strict', 'Rojo 7.7.1', 'ProfileStore', 'TopbarPlus v3.4.0'],
+      badge: 'Flagship Core'
     },
     {
-      title: 'Nexus Procedural Dungeon Generator',
+      title: 'Competitive Race Engine & League System',
       tag: 'roblox',
-      category: 'Procedural Generation',
-      description: 'Sistem pembuatan dungeon dinamis berbasis seed dan streaming chunk. Meminimalisir draw calls dan dynamic memory footprint.',
-      features: ['Seed-based generation', 'Zero-hitch chunk loading', 'Dynamic pathfinding graph'],
-      tech: ['Luau', 'StreamingEnabled', 'PathfindingService'],
-      badge: 'Algorithm'
+      category: 'Roblox Gameplay & Physics',
+      description: 'Sistem balap kompetitif terverifikasi server: checkpoint sequence tracking anti-skip, dynamic race HUD, server-authoritative timer ms, dan replay state recorder.',
+      features: ['Server checkpoint validation', 'Sub-millisecond timer logic', 'Dynamic spectator & race UI'],
+      tech: ['Luau Strict', 'CollectionService', 'RunService', 'TweenService'],
+      badge: 'Competitive Engine'
     },
     {
-      title: 'Aether Stylized 3D Environment Kits',
+      title: 'Global Summit & Speedrun Leaderboard Stack',
+      tag: 'roblox',
+      category: 'Backend & Distributed DataStore',
+      description: 'Infrastruktur backend leaderboard summit obby dan speedrun global. Menggunakan OrderedDataStore dengan rate-limit debounce, retry exponential backoff, dan instant ranking sync.',
+      features: ['OrderedDataStore ranking pipeline', 'Auto-recovery write debounce', 'Cross-server podium replication'],
+      tech: ['DataStoreService', 'OrderedDataStore', 'pcall Resilience'],
+      badge: 'Backend Pipeline'
+    },
+    {
+      title: 'NAKA Satchel Hotbar & Spatial 3D UI Suite',
+      tag: 'roblox',
+      category: 'Client UX & Spatial Systems',
+      description: 'Sistem hotbar kustom responsif mobile/desktop pengganti default inventory Roblox. Terintegrasi TopbarPlus v3.4.0, spatial 3D nameplates, dan UI culling off-screen berkinerja tinggi.',
+      features: ['Dynamic slot pooling & keybinding', 'Mobile touch & gamepad support', 'Spatial distance UI culling'],
+      tech: ['ContextActionService', 'UserInputService', 'TopbarPlus v3.4.0'],
+      badge: 'Client UX'
+    },
+    {
+      title: 'Saweria Monetization & Roblox License Gateway',
+      tag: 'web',
+      category: 'API Integration & License Engine',
+      description: 'Gateway integrasi donasi Saweria dan validasi lisensi modul Roblox secara real-time. Memvalidasi webhook server-to-server dan mendistribusikan in-game perk seketika tanpa restart server.',
+      features: ['Server webhook transaction bridge', 'Encrypted license token validator', 'Zero-downtime perk injection'],
+      tech: ['Node.js', 'Express', 'HttpService', 'Roblox Open Cloud'],
+      badge: 'Payment Gateway'
+    },
+    {
+      title: 'Modular Street Track & Summit Mountain Level Design',
       tag: '3d',
-      category: 'Blender & Technical Art',
-      description: 'Koleksi asset lingkungan modular dengan custom Geometry Nodes untuk scatter instancing otomatis dan shader material PBR ringan.',
-      features: ['Geometry Nodes scattering', 'Optimized LOD & collision meshes', 'PBR Handcrafted textures'],
-      tech: ['Blender 4.x', 'Geometry Nodes', 'FBX Pipeline'],
-      badge: '3D Showcase'
-    },
-    {
-      title: 'Apex Boss Encounter & AI State Machine',
-      tag: 'roblox',
-      category: 'Roblox Gameplay AI',
-      description: 'Sistem multi-phase boss fight dengan spatial behavior trees, dynamic telegraphing arena, dan sinkronisasi animasi multiplayer.',
-      features: ['Utility AI & Behavior Tree', 'Deterministic aggro routing', 'Hitbox telegraph sync'],
-      tech: ['Luau Strict', 'OOP', 'Animation Controller'],
-      badge: 'Gameplay AI'
-    },
-    {
-      title: 'Studio Bridge & Live Telemetry MCP Tool',
-      tag: 'web',
-      category: 'Dev Tooling & Integration',
-      description: 'Jalur komunikasi eksternal dua arah antara CLI toolchain dan Roblox Studio lewat WebSocket bridge untuk profiling real-time.',
-      features: ['WebSocket live bridge', 'Memory heap tracker', 'Instant code hot-reload'],
-      tech: ['TypeScript', 'Node.js', 'Roblox Open Cloud', 'WebSockets'],
-      badge: 'Developer Tool'
-    },
-    {
-      title: 'SkyPulse Telemetry & Data Dashboard',
-      tag: 'web',
-      category: 'Web Application',
-      description: 'Dashboard analitik interaktif performa tinggi untuk visualisasi log metrik game-server dan telemetri data real-time.',
-      features: ['Time-series charting', 'Zero lag data rendering', 'Dark mode cyber UI'],
-      tech: ['React 19', 'TypeScript', 'Tailwind CSS v4', 'Recharts'],
-      badge: 'Web App'
+      category: 'Blender 3D & Technical Level Design',
+      description: 'Level track jalan raya modular (v4 & v5 clean) dan summit mountain obby. Didesain dengan snapped vertex alignment, zero-gap topology, optimized collision geometry, dan custom PBR material.',
+      features: ['Grid-snapped modular track kit', 'Collision mesh optimization', 'Custom lighting & skybox presets'],
+      tech: ['Blender 4.x', 'Modular Snapping', 'FBX Pipeline', 'Roblox Lighting'],
+      badge: '3D & Level Art'
     }
   ];
 
@@ -206,7 +266,7 @@ def generate_procedural_biomes(seed: int, density: float):
                   Ready to Ship
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-mono">Roblox Engine Architect & 3D Artist</p>
+              <p className="text-[11px] text-slate-400 font-mono">Creator of Kit Naka • Roblox Engine Architect</p>
             </div>
           </div>
 
@@ -238,15 +298,15 @@ def generate_procedural_biomes(seed: int, density: float):
         <section className="space-y-8 pt-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-700/80 text-cyan-400 text-xs font-mono shadow-sm">
             <Gamepad2 className="w-3.5 h-3.5" />
-            <span>High-Performance Luau Systems • Zero-Lag Netcode • Procedural 3D</span>
+            <span>High-Performance Luau Systems • Kit Naka Production Architecture • Procedural 3D</span>
           </div>
 
           <div className="space-y-5 max-w-4xl">
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1]">
-              Meracik Arsitektur Game <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">Roblox & 3D Systems</span> yang Anti-Lag.
+              Meracik Arsitektur Game <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">Rojo 7.7.1 & Kit Naka</span> Tanpa Kompromi.
             </h1>
             <p className="text-base sm:text-lg md:text-xl text-slate-400 leading-relaxed max-w-3xl">
-              Gw <span className="text-slate-100 font-semibold">Naka Matri Wijaya</span>. Game Systems Engineer & Technical Artist. Spesialisasi dalam replikasi jaringan multiplayer, strict-type Luau, optimasi memori engine Roblox, serta pipeline prosedural Blender.
+              Gw <span className="text-slate-100 font-semibold">Naka Matri Wijaya</span> (<code className="text-cyan-400 font-mono text-base">Ihsan-ct</code>). Lead Creator & Architect di balik <span className="text-white font-semibold">Kit Naka</span> - framework arsitektur modular Roblox skala produksi dengan 98+ file Luau, pipeline Rojo 7.7.1, automated contract testing (30/31 passing), dan netcode zero-trust anti-exploit.
             </p>
           </div>
 
@@ -277,7 +337,7 @@ def generate_procedural_biomes(seed: int, density: float):
             </button>
 
             <a
-              href="https://github.com"
+              href="https://github.com/Ihsan-ct"
               target="_blank"
               rel="noreferrer"
               className="p-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-400 hover:text-white transition-colors"
@@ -338,9 +398,9 @@ def generate_procedural_biomes(seed: int, density: float):
                 <Terminal className="w-3.5 h-3.5" />
                 <span>Architecture In Action</span>
               </p>
-              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Standar Kode Bersih & Tipe Aman</h2>
+              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Production Source Blueprint</h2>
             </div>
-            <p className="text-xs text-slate-400 font-mono">Bukan tutorial code - arsitektur production ready</p>
+            <p className="text-xs text-slate-400 font-mono">Cuplikan arsitektur backend & test runner asli dari codebase Kit Naka</p>
           </div>
 
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
@@ -363,7 +423,7 @@ def generate_procedural_biomes(seed: int, density: float):
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Netcode.luau
+                  RaceLedger.luau
                 </button>
                 <button
                   onClick={() => { soundFX.playClick(); setActiveTab('hitbox'); }}
@@ -373,7 +433,7 @@ def generate_procedural_biomes(seed: int, density: float):
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  HitboxRollback.luau
+                  ArchitectureSpec.luau
                 </button>
                 <button
                   onClick={() => { soundFX.playClick(); setActiveTab('blender'); }}
@@ -383,7 +443,7 @@ def generate_procedural_biomes(seed: int, density: float):
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  BlenderNodes.py
+                  SpatialRewind.luau
                 </button>
               </div>
             </div>
@@ -702,7 +762,7 @@ def generate_procedural_biomes(seed: int, density: float):
           </div>
 
           <div className="pt-8 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4 font-mono relative z-10">
-            <p>© {new Date().getFullYear()} Naka Matri Wijaya. Built with strict standards.</p>
+            <p>© {new Date().getFullYear()} Naka Matri Wijaya (Ihsan-ct). Lead Creator of Kit Naka • Strict Luau Architect.</p>
             <p className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400" />
               <span>Luau • Blender 3D • React 19</span>

@@ -15,7 +15,7 @@ export function RobloxProfileCard() {
         <div className="relative shrink-0">
           <div className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-cyan-400/80 bg-[#070b14] shadow-xl shadow-cyan-500/10">
             <img
-              src="https://tr.rbxcdn.com/30DAY-AvatarHeadshot-9E334D6031267D2B60CEE9HAC40B9A89-Png/420/420/AvatarHeadshot/Webp/noFilter"
+              src="/roblox-avatar.png"
               alt="Sankiyowo07 Headshot"
               className="w-full h-full object-cover"
             />
@@ -27,7 +27,7 @@ export function RobloxProfileCard() {
         </div>
 
         {/* Dossier Content */}
-        <div className="space-y3 text-center md:text-left flex-1">
+        <div className="space-y-3 text-center md:text-left flex-1">
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
             <span className="font-hud text-2xl font-black text-white tracking-wide flex items-center gap-2">
               Sankiyowo07

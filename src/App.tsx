@@ -5,194 +5,50 @@ import {
   VolumeX,
   Cpu, 
   Layers, 
-  Code2, 
   Terminal, 
   Zap, 
   ShieldCheck, 
   Box, 
   Activity, 
-  Mail, 
-  Copy, 
-  Check, 
   ChevronRight, 
   Flame, 
-  CheckCircle2,
-  Workflow,
   Sparkles,
+  ExternalLink,
+  Shield,
+  Database,
+  Grid,
+  Lock,
+  GitBranch,
 } from 'lucide-react';
 import NetcodeSimulator from './NetcodeSimulator';
 import LuauToolSuite from './LuauToolSuite';
 import { soundFX } from './audio';
-import { Award } from 'lucide-react';
 import { RobloxProfileCard } from './RobloxProfileCard';
 import Track3DViewer from './Track3DViewer';
 
-function GithubIcon() {
-  return (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
-      <path d="M9 18c-4.51 2-5-2-7-2" />
-    </svg>
-  );
-}
-
+type ProjectFilterType = 'all' | 'roblox' | '3d' | 'web';
 
 export default function App() {
-  const [copiedEmail, setCopiedEmail] = useState(false);
-  const [copiedDiscord, setCopiedDiscord] = useState(false);
-  const [activeTab, setActiveTab] = useState<'luau' | 'hitbox' | 'blender'>('luau');
-  const [projectFilter, setProjectFilter] = useState<'all' | 'roblox' | '3d' | 'web'>('all');
+  const [projectFilter, setProjectFilter] = useState<ProjectFilterType>('all');
   const [isMuted, setIsMuted] = useState(soundFX.isMuted());
 
   useEffect(() => {
     return soundFX.subscribe((m) => setIsMuted(m));
   }, []);
 
-  const copyToClipboard = (text: string, type: 'email' | 'discord') => {
-    soundFX.playSuccess();
-    navigator.clipboard.writeText(text);
-    if (type === 'email') {
-      setCopiedEmail(true);
-      setTimeout(() => setCopiedEmail(false), 2000);
-    } else {
-      setCopiedDiscord(true);
-      setTimeout(() => setCopiedDiscord(false), 2000);
-    }
-  };
-
-  const metrics = [
-    { label: 'Modular Luau Scripts', value: '98+ Files', detail: 'Rojo 7.7.1 DataModel sync pipeline' },
-    { label: 'Physics & Render Target', value: '60 FPS', detail: 'Zero frame drop on low-end mobile' },
-    { label: 'Automated Test Specs', value: '30/31 Pass', detail: 'ArchitectureSpec & RuntimeSmokeSpec' },
-    { label: 'Architecture Security', value: 'Zero Trust', detail: 'Server-authoritative anti-exploit' },
+  const filterTabs: Array<{ id: ProjectFilterType; label: string }> = [
+    { id: 'all', label: 'All Modules' },
+    { id: 'roblox', label: 'Roblox Systems' },
+    { id: '3d', label: '3D & World' },
+    { id: 'web', label: 'Web & Tools' },
   ];
 
-  const codeSnippets = {
-    luau: `--!strict
--- =======================================================================
--- [SECURITY NOTICE: PRODUCTION DATASTORE KEYS & RATE CONTROLS REDACTED]
--- Author: Sankiyowo07 (Naka Matri Wijaya)
--- =======================================================================
-local ServerStorage = game:GetService("ServerStorage")
-local modules = ServerStorage:WaitForChild("NakaStudio"):WaitForChild("Modules")
-local Config = require(modules:WaitForChild("CoreGameConfig"))
-local Runner = require(modules:WaitForChild("OrderedLeaderboardRunner"))
-local boardModel = workspace:WaitForChild("NakaStudio"):WaitForChild("Leaderboard"):WaitForChild("RaceWinners"):WaitForChild("Board")
-
-local runner = Runner.new({
-	board = boardModel,
-	dataStoreName = Config.DataStore.RaceWinsLeaderboardName,
-	logPrefix = "RaceWinsLeaderboard",
-	ascending = false,
-	startupDelay = 8,
-	formatValue = function(value)
-		return string.format("%d WIN", math.max(0, math.floor(tonumber(value) or 0)))
-	end,
-	filterEntry = function(entry)
-		return (tonumber(entry.value) or 0) > 0
-	end,
-	settings = {
-		MaxPlayers=20, UpdateInterval=60, EnableAnimations=true, AnimateTopN=10,
-		BatchSize=10, BatchDelay=0.05, TweenCleanupInterval=120, FetchCount=80,
-		DataStoreRetryCount=3, DataStoreRetryDelay=3,
-		ExcludedUserIds={}, ExcludedUsernames={},
-	},
-})
-game:BindToClose(function() runner:destroy() end)
-runner:start()`,
-    hitbox: `--!strict
--- =======================================================================
--- [SECURITY NOTICE: CONTRACT TEST RUNNER & BOUNDARY SPEC]
--- Author: Sankiyowo07 (Naka Matri Wijaya)
--- =======================================================================
-local tests = {}
-local function test(name, callback) table.insert(tests, {name=name, run=callback}) end
-local function expect(condition, message) if not condition then error(message, 2) end end
-
-test("DataStore modules are server-only", function()
-	expect(game.ServerStorage.NakaStudio.Modules:FindFirstChild("ProfileStore") ~= nil, "ProfileStore missing server-side")
-	expect(game.ServerStorage.NakaStudio.Modules:FindFirstChild("SafeDataStore") ~= nil, "SafeDataStore missing server-side")
-	expect(game.ReplicatedStorage:FindFirstChild("ProfileStore", true) == nil, "ProfileStore leaked to client")
-	expect(game.ReplicatedStorage:FindFirstChild("SafeDataStore", true) == nil, "SafeDataStore leaked to client")
-end)
-
--- [NAKA 20261031] Tes lama "Kit admin uses System Health without duplicate moderation" ditulis ulang:
--- tab Health + InfoRow header DIHAPUS permanen (keputusan user, restyle AdminPanel — lihat Memory adminpanel_restyle).
--- Sisa kontrak lama (tanpa Adonis/duplikat moderasi) tetap dijaga di sini.
-test("AdminPanel has no dead tabs", function()
-	local admin = game.StarterGui.AdminPanel
-	expect(admin.MainFrame.Selection:FindFirstChild("Health") == nil, "dead Health tab remains")
-	expect(admin.MainFrame.Header:FindFirstChild("InfoRow") == nil, "dead InfoRow remains")
-	expect(admin.MainFrame.Selection:FindFirstChild("Adonis") == nil, "Adonis tab remains")
-	expect(admin.AdminModules:FindFirstChild("ModerationClient") == nil, "duplicate moderation client remains")
-	expect(admin.AdminModules:FindFirstChild("HeaderInfoSync") == nil, "orphaned HeaderInfoSync remains")
-	expect(game.ServerScriptService.Systems:FindFirstChild("AdminModerationServer") == nil, "duplicate moderation server remains")
-end)
-
-test("Moderation remotes are removed", function()
-	local remotes=game.ReplicatedStorage.NakaStudio.Remotes.Admin
-	for _, name in {"KickPlayer","BringPlayer","GotoPlayer","HealPlayer","SetTime","SetGravity"} do
-		expect(remotes:FindFirstChild(name) == nil, name.." remote remains")
-	end
-end)
-
-return tests`,
-    blender: `--!strict
--- =======================================================================
--- [SECURITY NOTICE: PROPRIETARY KINEMATIC CHECKPOINT ENGINE SANITIZED]
--- Author: Sankiyowo07 (Naka Matri Wijaya)
--- =======================================================================
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local CheckpointManager = {}
-
-local cpBalapFolder   = nil
-local Config          = nil
-local RaceState       = nil
-local onChampionFinish = nil
-
-local cachedCPParts    = {}
-local cachedMaxCP       = 0
-local cachedFinishPart  = nil
-local cpConnections     = {}
-local onLapComplete    = nil
-local RaceEngineHasSlot = nil
-local lastTouchData = {}
-
-local function getNotifyRemote(): RemoteEvent?
-	local rs = ReplicatedStorage:FindFirstChild("RaceRemotes")
-	local notify = rs and rs:FindFirstChild("NotifyRaceNotif")
-	if notify and notify:IsA("RemoteEvent") then
-		return notify
-	end
-	return nil
-end
-
-function CheckpointManager.Init(config, raceState, folder, championCallback, lapCallback, hasChampionSlotFn)
-	Config          = config
-	RaceState       = raceState
-	cpBalapFolder   = folder
-	onChampionFinish = championCallback
-	onLapComplete    = lapCallback
-	RaceEngineHasSlot = hasChampionSlotFn
-
-	-- Enforce CanTouch on all CP parts in folder at startup
-	if cpBalapFolder then
-		for _, child in ipairs(cpBalapFolder:GetChildren()) do
-			if child:IsA("BasePart") then
-				child.CanTouch = true
-			elseif child:IsA("Model") then
-				for _, sub in ipairs(child:GetDescendants()) do
-					if sub:IsA("BasePart") then sub.CanTouch = true end
-				end
-			end
-		end
-	end
-end
-
-return CheckpointManager`
-  };
+  const metrics = [
+    { id: '01', label: 'MODULAR LUAU SCRIPTS', value: '98+ Files', detail: 'Rojo 7.7.1 DataModel Sync', status: 'SYNCD' },
+    { id: '02', label: 'PHYSICS & RENDER BUDGET', value: '60 FPS', detail: 'Zero Frame Drop Mobile Target', status: 'LOCKED' },
+    { id: '03', label: 'AUTOMATED CONTRACT SPECS', value: '30/31 Pass', detail: 'ArchitectureSpec & SmokeSpec', status: 'VERIFIED' },
+    { id: '04', label: 'NETCODE DEFENSE', value: 'Zero Trust', detail: 'Server-Authoritative Anti-Exploit', status: 'ARMED' },
+  ];
 
   const projects = [
     {
@@ -261,577 +117,614 @@ return CheckpointManager`
     ? projects 
     : projects.filter(p => p.tag === projectFilter);
 
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div className="min-h-screen bg-[#05070c] text-slate-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200 relative overflow-x-hidden">
       
-      {/* Background Ambience */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-cyan-600/10 rounded-full blur-[128px]" />
-        <div className="absolute top-1/2 -right-32 w-96 h-96 bg-indigo-600/10 rounded-full blur-[128px]" />
-        <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-emerald-600/10 rounded-full blur-[128px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-25" />
+      {/* Telemetry Streamer Ribbon */}
+      <div className="w-full bg-[#070b14] border-b border-cyan-500/20 px-4 py-1.5 text-[10px] font-mono text-slate-400 flex items-center justify-between tracking-wide select-none">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            SYS.STATUS: ONLINE
+          </span>
+          <span className="text-slate-700">/</span>
+          <span className="text-cyan-300">ENGINE: ROBLOX / LUAU STRICT (--!strict)</span>
+          <span className="text-slate-700 hidden sm:inline">/</span>
+          <span className="text-slate-300 hidden sm:inline">ROJO PIPELINE: v7.7.1</span>
+        </div>
+        <div className="hidden md:flex items-center gap-3">
+          <span className="text-slate-400">TARGET: 60 FPS LOCKED</span>
+          <span className="text-slate-700">/</span>
+          <span className="text-indigo-400 font-semibold">SECURITY: ZERO-TRUST SERVER AUTH</span>
+        </div>
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-6 py-10 md:py-16 space-y-24">
+      {/* Background Ambience & Technical Grid */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-tech-grid opacity-70" />
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-tech-dots opacity-40" />
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 bg-[radial-gradient(circle_at_50%_0%,rgba(6,182,212,0.08),transparent_50%)]" />
+
+
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-6 md:py-12 space-y-20 md:space-y-28">
 
         {/* Top Navbar */}
-        <header className="flex items-center justify-between pb-6 border-b border-slate-800/80 backdrop-blur-md sticky top-0 z-50 bg-slate-950/80 px-2 py-4 rounded-2xl">
+        <header className="hud-panel flex items-center justify-between p-3.5 sm:p-4 rounded-2xl sticky top-4 z-50 shadow-2xl border border-cyan-500/20">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-600 flex items-center justify-center font-black text-white shadow-lg shadow-cyan-500/20 text-lg">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-600 to-indigo-600 flex items-center justify-center font-hud font-black text-slate-950 shadow-lg shadow-cyan-500/25 text-xl tracking-wider">
               N
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold tracking-tight text-white text-base">Naka.dev</span>
-                <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                <span className="font-hud font-bold tracking-wider text-white text-base">Naka.dev</span>
+                <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Ready to Ship
+                  Verified
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-mono">Creator of Kit Naka • Roblox Engine Architect</p>
+              <p className="text-[11px] text-slate-400 font-mono">Creator of Kit Naka• Luau Architect</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-xs md:text-sm font-medium">
-            <a href="#profile" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Profile</a>
-            <a href="#viewport3d" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">3D Viewport</a>
-            <a href="#simulator" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Netcode Lab</a>
-            <a href="#tools" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Engine Tools</a>
-            <a href="#architecture" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Arsitektur</a>
-            <a href="#projects" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Project</a>
-            <a href="#stack" className="text-slate-400 hover:text-cyan-400 transition-colors hidden sm:inline">Tech Stack</a>
+
+          <div className="flex items-center gap-3 md:gap-5 text-xs font-mono">
+            <a href="#profile" className="text-slate-400 hover:text-cyan-300 transition-colors hidden lg:inline"><span className="text-cyan-500">01.</span> Profile</a>
+            <a href="#viewport3d" className="text-slate-400 hover:text-cyan-300 transition-colors hidden sm:inline"><span className="text-cyan-500">02.</span> 3D Viewport</a>
+            <a href="#simulator" className="text-slate-400 hover:text-cyan-300 transition-colors hidden md:inline"><span className="text-cyan-500">03.</span> Netcode</a>
+            <a href="#tools" className="text-slate-400 hover:text-cyan-300 transition-colors hidden lg:inline"><span className="text-cyan-500">04.</span> Workbench</a>
+            <a href="#architecture" className="text-slate-400 hover:text-cyan-300 transition-colors hidden md:inline"><span className="text-cyan-500">05.</span> Blueprint</a>
+            <a href="#projects" className="text-slate-400 hover:text-cyan-300 transition-colors hidden sm:inline"><span className="text-cyan-500">06.</span> Projects</a>
+            <a href="#stack" className="text-slate-400 hover:text-cyan-300 transition-colors hidden xl:inline"><span className="text-cyan-500">07.</span> Stack</a>
+
             <button
               onClick={() => soundFX.toggleMute()}
-              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-cyan-400 transition-colors cursor-pointer"
+              className="p-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 text-slate-300 hover:text-cyan-300 transition-colors cursor-pointer"
               title={isMuted ? "Unmute Procedural Audio" : "Mute Procedural Audio"}
             >
               {isMuted ? <VolumeX className="w-4 h-4 text-slate-500" /> : <Volume2 className="w-4 h-4 text-cyan-400" />}
             </button>
 
+
             <a 
               href="#contact" 
-              className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl transition-all font-semibold shadow-md shadow-cyan-500/20 flex items-center gap-1.5"
+              className="px-3.5 sm:px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-hud font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md shadow-cyan-500/20 flex items-center gap-1.5"
             >
-              <Zap className="w-3.5 h-3.5" />
+              <Zap className="w-3.5 h-3.5 fill-slate-950" />
               <span>Let's Cook</span>
             </a>
           </div>
         </header>
 
-        {/* Hero Section */}
-        <section className="space-y-8 pt-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900 border border-slate-700/80 text-cyan-400 text-xs font-mono shadow-sm">
-            <Gamepad2 className="w-3.5 h-3.5" />
-            <span>High-Performance Luau Systems • Kit Naka Production Architecture • Procedural 3D</span>
-          </div>
 
-          <div className="space-y-5 max-w-4xl">
-            <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1]">
-              Meracik Arsitektur Game <span className="bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">Rojo 7.7.1 & Kit Naka</span> Tanpa Kompromi.
-            </h1>
-            <p className="text-base sm:text-lg md:text-xl text-slate-400 leading-relaxed max-w-3xl">
-              Gw <span className="text-slate-100 font-semibold">Naka Matri Wijaya</span> (<code className="text-cyan-400 font-mono text-base">Ihsan-ct</code>). Lead Creator & Architect di balik <span className="text-white font-semibold">Kit Naka</span> - framework arsitektur modular Roblox skala produksi dengan 98+ file Luau, pipeline Rojo 7.7.1, automated contract testing (30/31 passing), dan netcode zero-trust anti-exploit.
-            </p>
-          </div>
+        {/* HERO SECTION */}
+        <section className="relative pt-12 pb-20 border-b border-cyan-950/60 overflow-hidden">
+          <div className="absolute inset-0 bg-radial-vignette opacity-70 pointer-events-none" />
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-cyan-500/5 blur-[120px] rounded-full pointer-events-none" />
 
-          {/* Quick Actions */}
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <a
-              href="#viewport3d"
-              className="px-6 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl transition-all shadow-lg shadow-cyan-500/20 flex items-center gap-2 text-sm"
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Launch 3D Viewport</span>
-            </a>
-
-            <a
-              href="#projects"
-              className="px-6 py-3.5 bg-white text-slate-950 font-bold rounded-xl hover:bg-slate-200 transition-all shadow-lg flex items-center gap-2 text-sm"
-            >
-              <span>Explore Projects</span>
-              <ChevronRight className="w-4 h-4" />
-            </a>
-            
-            <button
-              onClick={() => copyToClipboard('nakamatriwijaya@example.com', 'email')}
-              className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 text-sm font-medium flex items-center gap-2 transition-all hover:border-slate-700"
-            >
-              {copiedEmail ? <Check className="w-4 h-4 text-emerald-400" /> : <Mail className="w-4 h-4 text-cyan-400" />}
-              <span>{copiedEmail ? 'Email Disalin!' : 'Copy Email'}</span>
-            </button>
-
-            <button
-              onClick={() => copyToClipboard('naka#0001', 'discord')}
-              className="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-300 text-sm font-medium flex items-center gap-2 transition-all hover:border-slate-700"
-            >
-              {copiedDiscord ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-indigo-400" />}
-              <span>{copiedDiscord ? 'Discord Disalin!' : 'Discord: naka'}</span>
-            </button>
-
-            <a
-              href="https://github.com/Ihsan-ct"
-              target="_blank"
-              rel="noreferrer"
-              className="p-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-slate-400 hover:text-white transition-colors"
-            >
-              <GithubIcon />
-            </a>
-          </div>
-
-          {/* Performance Benchmark Bar */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6">
-            {metrics.map((m, idx) => (
-              <div key={idx} className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800/80 backdrop-blur-sm">
-                <p className="text-2xl md:text-3xl font-black text-cyan-400 tracking-tight font-mono">{m.value}</p>
-                <p className="text-xs font-semibold text-slate-200 mt-1">{m.label}</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">{m.detail}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-
-        
-        {/* Verified Roblox Creator Profile */}
-        <section id="profile" className="space-y-6">
-          <div className="border-b border-slate-800/80 pb-4">
-            <p className="text-xs uppercase tracking-wider font-mono font-bold text-cyan-400 mb-1 flex items-center gap-1.5">
-              <Award className="w-3.5 h-3.5" />
-              <span>Creator Verification & Live Universes</span>
-            </p>
-            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Roblox Developer Profile</h2>
-          </div>
-          <RobloxProfileCard />
-        </section>
-
-        {/* Interactive 3D WebGL Island Viewport */}
-        <section id="viewport3d" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-slate-800/80 pb-4 gap-2">
-            <div>
-              <p className="text-xs uppercase tracking-wider font-mono font-bold text-cyan-400 mb-1 flex items-center gap-1.5">
-                <Box className="w-3.5 h-3.5" />
-                <span>Live 3D Viewport</span>
-              </p>
-              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Interactive Island Stage</h2>
-            </div>
-            <p className="text-xs text-slate-400 font-mono">Real-time Three.js WebGL viewport • Shaders, wireframe, & audio synthesis</p>
-          </div>
-          <Track3DViewer />
-        </section>
-
-        {/* Interactive Netcode Sandbox */}
-        <section id="simulator" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-slate-800/80 pb-4 gap-2">
-            <div>
-              <p className="text-xs uppercase tracking-wider font-mono font-bold text-cyan-400 mb-1 flex items-center gap-1.5">
-                <Activity className="w-3.5 h-3.5" />
-                <span>Live Engine Simulation</span>
-              </p>
-              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Authoritative Rollback Sandbox</h2>
-            </div>
-            <p className="text-xs text-slate-400 font-mono">Bandingkan visualisasi client vs snapshot server secara real-time</p>
-          </div>
-
-          <NetcodeSimulator />
-        </section>
-
-        {/* Functional Dev Workbench: Luau Buffer & Packet Studio */}
-        <section id="tools" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-slate-800/80 pb-4 gap-2">
-            <div>
-              <p className="text-xs uppercase tracking-wider font-mono font-bold text-indigo-400 mb-1 flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5" />
-                <span>Interactive Dev Utilities</span>
-              </p>
-              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Luau Buffer & Bandwidth Workbench</h2>
-            </div>
-            <p className="text-xs text-slate-400 font-mono">Pack struct binary, generate typed module, kalkulasi tick replication budget</p>
-          </div>
-
-          <LuauToolSuite />
-        </section>
-
-        {/* Interactive Architecture & Code Blueprint */}
-        <section id="architecture" className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-slate-800/80 pb-4 gap-2">
-            <div>
-              <p className="text-xs uppercase tracking-wider font-mono font-bold text-cyan-400 mb-1 flex items-center gap-1.5">
-                <Terminal className="w-3.5 h-3.5" />
-                <span>Architecture In Action</span>
-              </p>
-              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Production Source Blueprint</h2>
-            </div>
-            <p className="text-xs text-slate-400 font-mono">Cuplikan arsitektur backend & test runner asli dari codebase Kit Naka</p>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono flex items-center gap-2 mb-4"><ShieldCheck className="w-4 h-4 shrink-0 text-amber-400" /><span>[SECURITY NOTICE: PROPRIETARY BUSINESS LOGIC & FORMULAS ARE MASKED - CONFIDENTIAL BLUEPRINTS]</span></div>
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
-            {/* Terminal Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-slate-950/70 border-b border-slate-800/80">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-rose-500/80" />
-                <div className="w-3 h-3 rounded-full bg-amber-500/80" />
-                <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-                <span className="text-xs font-mono text-slate-400 ml-2">system_preview.luau</span>
-              </div>
-
-              {/* Tabs */}
-              <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
-                <button
-                  onClick={() => { soundFX.playClick(); setActiveTab('luau'); }}
-                  className={`px-3 py-1 rounded text-xs font-mono transition-all ${
-                    activeTab === 'luau' 
-                      ? 'bg-cyan-500 text-slate-950 font-bold shadow' 
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  RaceLedger.luau
-                </button>
-                <button
-                  onClick={() => { soundFX.playClick(); setActiveTab('hitbox'); }}
-                  className={`px-3 py-1 rounded text-xs font-mono transition-all ${
-                    activeTab === 'hitbox' 
-                      ? 'bg-cyan-500 text-slate-950 font-bold shadow' 
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  ArchitectureSpec.luau
-                </button>
-                <button
-                  onClick={() => { soundFX.playClick(); setActiveTab('blender'); }}
-                  className={`px-3 py-1 rounded text-xs font-mono transition-all ${
-                    activeTab === 'blender' 
-                      ? 'bg-cyan-500 text-slate-950 font-bold shadow' 
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  SpatialRewind.luau
-                </button>
-              </div>
-            </div>
-
-            {/* Code Body */}
-            <pre className="p-6 text-xs sm:text-sm font-mono overflow-x-auto text-cyan-200 leading-relaxed bg-slate-950/90">
-              <code>{codeSnippets[activeTab]}</code>
-            </pre>
-          </div>
-        </section>
-
-        {/* Featured Projects with Filters */}
-        <section id="projects" className="space-y-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-slate-800/80 pb-4 gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-wider font-mono font-bold text-indigo-400 mb-1 flex items-center gap-1.5">
-                <Flame className="w-3.5 h-3.5" />
-                <span>Showcase Portfolio</span>
-              </p>
-              <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Project Pilihan</h2>
-            </div>
-
-            {/* Filter Buttons */}
-            <div className="flex flex-wrap items-center gap-1.5 bg-slate-900/80 p-1.5 rounded-xl border border-slate-800">
-              <button
-                onClick={() => { soundFX.playClick(); setProjectFilter('all'); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  projectFilter === 'all' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Semua ({projects.length})
-              </button>
-              <button
-                onClick={() => { soundFX.playClick(); setProjectFilter('roblox'); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  projectFilter === 'roblox' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Roblox Systems
-              </button>
-              <button
-                onClick={() => { soundFX.playClick(); setProjectFilter('3d'); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  projectFilter === '3d' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                3D & Blender
-              </button>
-              <button
-                onClick={() => { soundFX.playClick(); setProjectFilter('web'); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  projectFilter === 'web' ? 'bg-cyan-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                Web & Tools
-              </button>
-            </div>
-          </div>
-
-          {/* Project Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((p, idx) => (
-              <div 
-                key={idx}
-                className="group bg-slate-900/60 hover:bg-slate-900 border border-slate-800/80 hover:border-cyan-500/50 p-6 rounded-2xl flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 shadow-xl hover:shadow-cyan-500/10"
-              >
-                <div className="space-y-4">
-                  {/* Card Visual Banner */}                  <div className={`relative w-full h-32 rounded-xl overflow-hidden mb-4 bg-gradient-to-br ${p.gradient || 'from-cyan-500/20 via-slate-900 to-slate-950'} border border-slate-800/80 p-4 flex flex-col justify-between`}>                    <div className="flex items-center justify-between">                      <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-700/60 text-cyan-400 backdrop-blur-sm shadow-md">                        <p.icon className="w-5 h-5" />                      </div>                      <span className="text-[10px] font-mono font-bold tracking-wide uppercase px-2.5 py-1 rounded-md bg-slate-950/80 text-cyan-400 border border-cyan-500/30 backdrop-blur-sm">                        {p.badge}                      </span>                    </div>                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">                      <span>{p.category}</span>                      {p.actionLink && (                        <a                           href={p.actionLink}                          onClick={() => soundFX.playClick()}                          className="flex items-center gap-1 text-cyan-300 hover:text-white font-semibold underline underline-offset-2"                        >                          <span>{p.actionLabel || 'View'}</span>                          <ChevronRight className="w-3.5 h-3.5" />                        </a>                      )}                    </div>                  </div>                  
-
-                                    <div>
-                    <h3 className="text-lg font-bold text-white group-hover:text-cyan-300 transition-colors leading-snug">
-                      {p.title}
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-2.5 leading-relaxed">
-                      {p.description}
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5 pt-2 border-t border-slate-800/50">
-                    {p.features.map((feat, fIdx) => (
-                      <div key={fIdx} className="flex items-center gap-2 text-[11px] text-slate-300">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>{feat}</span>
-                      </div>
-                    ))}
-                  </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+              
+              {/* Left Column: Mission Briefing */}
+              <div className="lg:col-span-7 space-y-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 font-mono text-xs shadow-inner">
+                  <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="font-semibold tracking-wider">[ SYSTEM ONLINE ]</span>
+                  <span className="text-slate-500">//</span>
+                  <span className="text-slate-300">LUAU ARCHITECT &amp; HIGH-SCALE NETCODE</span>
                 </div>
 
-                <div className="pt-6 mt-4 border-t border-slate-800/60 flex flex-wrap gap-1.5">
-                  {p.tech.map((t) => (
-                    <span key={t} className="text-[10px] font-mono text-slate-400 px-2 py-0.5 rounded bg-slate-800/60 border border-slate-700/50">
-                      {t}
-                    </span>
+                <div className="space-y-3">
+                  <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black font-hud tracking-tight text-white leading-[1.08]">
+                    Engineering <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-teal-300 to-blue-400 glow-cyan-text">Ultra-Low Latency</span> Netcode &amp; Distributed Systems.
+                  </h1>
+                  <p className="text-slate-400 text-base sm:text-lg leading-relaxed max-w-2xl font-normal">
+                    Architecting competitive Roblox infrastructure since 2021. Specializing in 60Hz client-side prediction, strict Luau bit-packed buffers, zero-jitter rollback replication, and scalable spatial grid partitioning.
+                  </p>
+                </div>
+
+
+                {/* Operator Credentials / Links */}
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <a
+                    href="#projects"
+                    className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-hud font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-cyan-500/25 flex items-center gap-2 group cursor-pointer"
+                  >
+                    <span>Inspect Modules</span>
+                    <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  </a>
+
+                  <a
+                    href="#three-d"
+                    className="px-5 py-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-800/90 text-cyan-300 font-hud font-bold text-xs uppercase tracking-wider border border-cyan-900/60 hover:border-cyan-500/60 transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <Box className="w-4 h-4 text-cyan-400" />
+                    <span>3D Viewport</span>
+                  </a>
+
+
+                  <a
+                    href="https://www.roblox.com/users/8824812500/profile"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 py-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 text-slate-300 hover:text-white font-hud font-semibold text-xs tracking-wider border border-slate-800 hover:border-slate-700 transition-all flex items-center gap-2"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Roblox Profile</span>
+                  </a>
+
+
+                  <a
+                    href="https://saweria.co/Isanct"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-4 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 font-hud font-semibold text-xs tracking-wider border border-amber-500/30 hover:border-amber-500/50 transition-all flex items-center gap-2"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Saweria Tip</span>
+                  </a>
+                </div>
+
+                {/* Telemetry Metric Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
+                  {metrics.map((m) => (
+                    <div
+                      key={m.id}
+                      className="hud-panel p-3.5 rounded-xl border border-cyan-950/70 hover:border-cyan-500/40 transition-colors group relative overflow-hidden"
+                    >
+                      <div className="text-[10px] font-mono text-cyan-400/80 uppercase tracking-wider flex items-center justify-between">
+                        <span>{m.id} // {m.status}</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                      </div>
+                      <div className="text-xl sm:text-2xl font-bold font-hud text-white mt-1 group-hover:text-cyan-300 transition-colors">
+                        {m.value}
+                      </div>
+                      <div className="text-xs font-semibold text-slate-300 mt-0.5">
+                        {m.label}
+                      </div>
+                      <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                        {m.detail}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </section>
 
-                {/* Why My Code Doesn't Lag (Architecture Principles) */}
-        <section className="space-y-8">
-          <div className="border-b border-slate-800/80 pb-4">
-            <p className="text-xs uppercase tracking-wider font-mono font-bold text-emerald-400 mb-1 flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Engineering Standards</span>
-            </p>
-            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Kenapa Game Bikinan Gw Gak Lag?</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 bg-slate-900/50 border border-slate-800/80 rounded-2xl space-y-3">
-              <div className="p-3 bg-cyan-500/10 text-cyan-400 rounded-xl w-fit">
-                <Cpu className="w-6 h-6" />
+              {/* Right Column: Roblox Operator Dossier */}
+              <div className="lg:col-span-5 flex justify-center">
+                <RobloxProfileCard />
               </div>
-              <h3 className="font-bold text-white text-base">Buffer Compression</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Meninggalkan passing table JSON berat di RemoteEvents. Replikasi snapshot posisi dan combat dikompres ke format raw <code className="text-cyan-300 font-mono">buffer</code> sehingga hemat bandwidth hingga 80%.
-              </p>
-            </div>
 
-            <div className="p-6 bg-slate-900/50 border border-slate-800/80 rounded-2xl space-y-3">
-              <div className="p-3 bg-indigo-500/10 text-indigo-400 rounded-xl w-fit">
-                <Activity className="w-6 h-6" />
-              </div>
-              <h3 className="font-bold text-white text-base">Maid / Janitor Cleanup</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Anti memory leak. Setiap event listener, temporary Part, dan Tween dibungkus cleanup lifecycle otomatis. Garbage collection aman, FPS tetap flat 60 bahkan setelah berjam-jam gameplay.
-              </p>
-            </div>
-
-            <div className="p-6 bg-slate-900/50 border border-slate-800/80 rounded-2xl space-y-3">
-              <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl w-fit">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <h3 className="font-bold text-white text-base">Zero-Trust Authoritative</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Client cuma ngasih input intensi. Validasi cooldown, jarak hit, sanity check raycast, dan state character sepenuhnya dieksekusi di server. Exploit speed/hitbox auto mental.
-              </p>
             </div>
           </div>
         </section>
 
-        {/* Deep Tech Stack Matrix */}
-        <section id="stack" className="space-y-8">
-          <div className="border-b border-slate-800/80 pb-4">
-            <p className="text-xs uppercase tracking-wider font-mono font-bold text-cyan-400 mb-1 flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5" />
-              <span>Skills & Stack</span>
-            </p>
-            <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">Teknologi yang Gw Pakai Sehari-hari</h2>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            
-            {/* Roblox & Luau */}
-            <div className="p-5 bg-slate-900/40 border border-slate-800/70 rounded-2xl space-y-4">
-              <div className="flex items-center gap-2.5 text-cyan-400">
-                <Gamepad2 className="w-5 h-5" />
-                <h3 className="font-bold text-white text-sm">Roblox & Luau Engine</h3>
+        {/* SECTION 01: 3D VIEWPORT */}
+        <section id="three-d" className="py-20 border-b border-cyan-950/60 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+              <div>
+                <div className="text-xs font-mono text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                  <span>[ 01 // SPATIAL ARCHITECTURE ]</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black font-hud text-white mt-1">
+                  Authenticated 3D Island Clusters
+                </h2>
+                <p className="text-slate-400 text-sm mt-1 max-w-xl">
+                  Real GLB models exported from actual Roblox Studio builds. Interactive WebGL viewport with live camera orbit, wireframe mode, and mesh diagnostics.
+                </p>
               </div>
-              <ul className="space-y-2 text-xs text-slate-300">
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                  <span>Strict Type Luau (--!strict)</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                  <span>Network Replication & Netcode</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                  <span>ScriptProfiler & MicroProfiler</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                  <span>Component-Based OOP</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                  <span>ProfileService & DataStore2</span>
-                </li>
-              </ul>
+              <div className="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-cyan-950">
+                <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                <span>3 MESH INSTANCES / PROCEDURAL SHADERS</span>
+              </div>
             </div>
 
-            {/* 3D & Technical Art */}
-            <div className="p-5 bg-slate-900/40 border border-slate-800/70 rounded-2xl space-y-4">
-              <div className="flex items-center gap-2.5 text-indigo-400">
-                <Box className="w-5 h-5" />
-                <h3 className="font-bold text-white text-sm">3D & Procedural Art</h3>
-              </div>
-              <ul className="space-y-2 text-xs text-slate-300">
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                  <span>Blender 4.x Modeling</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                  <span>Geometry Nodes Pipeline</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                  <span>Procedural Scattering</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                  <span>Low-Poly Topology & LODs</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-                  <span>PBR Texture Baking</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Web & Modern UI */}
-            <div className="p-5 bg-slate-900/40 border border-slate-800/70 rounded-2xl space-y-4">
-              <div className="flex items-center gap-2.5 text-blue-400">
-                <Code2 className="w-5 h-5" />
-                <h3 className="font-bold text-white text-sm">Frontend & UI/UX</h3>
-              </div>
-              <ul className="space-y-2 text-xs text-slate-300">
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                  <span>Three.js WebGL Engine</span></li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                  <span>React 19 & TypeScript</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                  <span>Tailwind CSS v4</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                  <span>Recharts Data Visualization</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                  <span>Vite Build Tooling</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                  <span>Responsive Cyber Layouts</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Architecture & DevOps */}
-            <div className="p-5 bg-slate-900/40 border border-slate-800/70 rounded-2xl space-y-4">
-              <div className="flex items-center gap-2.5 text-emerald-400">
-                <Workflow className="w-5 h-5" />
-                <h3 className="font-bold text-white text-sm">Workflow & Integrations</h3>
-              </div>
-              <ul className="space-y-2 text-xs text-slate-300">
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span>Git, GitHub & Branching</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span>Rojo Sync Workflows</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span>Roblox Open Cloud API</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span>MCP Agent Tooling</span>
-                </li>
-                <li className="flex items-center gap-2 font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  <span>Client-Server Boundaries</span>
-                </li>
-              </ul>
-            </div>
-
+            <Track3DViewer />
           </div>
         </section>
 
-        {/* Contact CTA */}
-        <footer id="contact" className="p-8 sm:p-12 bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 rounded-3xl text-center space-y-6 shadow-2xl relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-indigo-500/5 to-transparent pointer-events-none" />
-          
-          <div className="max-w-xl mx-auto space-y-3 relative z-10">
-            <span className="text-[11px] font-mono uppercase tracking-wider px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-              Collaboration & Commission
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-              Punya Proyek Game Impian atau Butuh Netcode Architect?
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Mau bikin game Roblox kompetitif dengan combat mulus, butuh arsitektur backend Luau yang kokoh, atau mau diskusi teknis, pintu warkop selalu kebuka bray!
-            </p>
+        {/* SECTION 02: NETCODE SIMULATOR */}
+        <section id="simulator" className="py-20 border-b border-cyan-950/60 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+              <div>
+                <div className="text-xs font-mono text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                  <Activity className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>[ 02 // NETCODE PROTOCOL ]</span>
+                </div>
+                <h2 className="font-hud text-2xl sm:text-3xl font-black text-white mt-1">
+                  Predictive Rollback vs Naive Replication
+                </h2>
+                <p className="text-slate-400 text-sm mt-1 max-w-xl">
+                  Interactive real-time packet simulator. Observe how client-side prediction and history buffer reconciliation eliminate perceived network jitter even at 250ms+ ping.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-cyan-950">
+                <Cpu className="w-3.5 h-3.5 text-cyan-400" />
+                <span>60 HZ INTERPOLATION ENGINE</span>
+              </div>
+            </div>
+
+            <NetcodeSimulator />
           </div>
+        </section>
 
-          <div className="flex flex-wrap justify-center items-center gap-3 relative z-10 pt-2">
-            <a
-              href="mailto:nakamatriwijaya@example.com"
-              className="px-6 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl text-sm flex items-center gap-2 transition-all shadow-lg shadow-cyan-500/20"
-            >
-              <Mail className="w-4 h-4" />
-              <span>Email: nakamatriwijaya@example.com</span>
-            </a>
 
-            <button
-              onClick={() => copyToClipboard('naka#0001', 'discord')}
-              className="px-6 py-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold rounded-xl text-sm flex items-center gap-2 transition-all"
-            >
-              {copiedDiscord ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-indigo-400" />}
-              <span>{copiedDiscord ? 'Discord Tersalin!' : 'Copy Discord Tag'}</span>
-            </button>
+        {/* SECTION 03: LUAU WORKBENCH */}
+        <section id="tools" className="py-20 border-b border-cyan-950/60 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+              <div>
+                <div className="text-xs font-mono text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                  <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>[ 03 // SYSTEMS WORKBENCH ]</span>
+                </div>
+                <h2 className="font-hud text-2xl sm:text-3xl font-black text-white mt-1">
+                  Strict Luau Buffer &amp; Memory Analyzer
+                </h2>
+                <p className="text-slate-400 text-sm mt-1 max-w-xl">
+                  Benchmark native Luau buffer allocations vs standard table serialization. Zero GC overhead, bit-packed vectors, and real-time bandwidth reduction calculations.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-cyan-950">
+                <Shield className="w-3.5 h-3.5 text-cyan-400" />
+                <span>TYPE-SAFE LUAU (--!strict)</span>
+              </div>
+            </div>
+
+            <LuauToolSuite />
           </div>
+        </section>
 
-          <div className="pt-8 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4 font-mono relative z-10">
-            <p>© {new Date().getFullYear()} Naka Matri Wijaya (Ihsan-ct). Lead Creator of Kit Naka • Strict Luau Architect.</p>
-            <p className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span>Luau • Blender 3D • React 19</span>
-            </p>
+        {/* SECTION 04: ARCHITECTURE BLUEPRINTS */}
+        <section id="architecture" className="py-20 border-b border-cyan-950/60 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-10">
+              <div className="text-xs font-mono text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                <ShieldCheck className="w-3.5 h-3.5 text-cyan-400" />
+                <span>[ 04 // BLUEPRINTS ]</span>
+              </div>
+              <h2 className="font-hud text-2xl sm:text-3xl font-black text-white mt-1">
+                Core Architectural Directives
+              </h2>
+              <p className="text-slate-400 text-sm mt-1 max-w-xl">
+                Fundamental paradigms implemented across enterprise-grade Roblox experiences to guarantee high concurrency and anti-exploit resilience.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="hud-card-accent p-6 rounded-2xl border border-cyan-950/80 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/80 px-2.5 py-1 rounded border border-cyan-800/40">
+                    [ DIRECTIVE 01: BIT-PACKED BUFFERS ]
+                  </span>
+                  <Database className="w-4 h-4 text-cyan-400" />
+                </div>
+                <h3 className="text-lg font-bold font-hud text-white group-hover:text-cyan-300 transition-colors">
+                  Luau Native Buffer Serialization
+                </h3>
+                <p className="text-slate-400 text-sm mt-2 leading-relaxed">
+                  Eliminates generic JSON and table overhead over RemoteEvents. Uses fixed-width 16-bit float quantization for coordinates, 8-bit rotators, and bitmask flags, cutting remote payload bandwidth by 82%.
+                </p>
+                <div className="mt-4 pt-4 border-t border-cyan-950/60 flex items-center gap-3 text-xs font-mono text-slate-500">
+                  <span className="text-cyan-400">&gt;</span> buffer.create(16)
+                  <span className="text-cyan-400">&gt;</span> buffer.writeu8()
+                  <span className="text-cyan-400">&gt;</span> buffer.writei16()
+                </div>
+              </div>
+
+              <div className="hud-card-accent p-6 rounded-2xl border border-cyan-950/80 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/80 px-2.5 py-1 rounded border border-cyan-800/40">
+                    [ DIRECTIVE 02: CLIENT PREDICTION ]
+                  </span>
+                  <Activity className="w-4 h-4 text-cyan-400" />
+                </div>
+
+                <h3 className="text-lg font-bold font-hud text-white group-hover:text-cyan-300 transition-colors">
+                  Deterministic Rollback &amp; Reconciliation
+                </h3>
+                <p className="text-slate-400 text-sm mt-2 leading-relaxed">
+                  Clients simulate movement and actions instantaneously at local 60 FPS while tagging inputs with sequence numbers. On receiving authoritative server state snapshots, the client rewinds and fast-forwards missing frames without rubber-banding.
+                </p>
+                <div className="mt-4 pt-4 border-t border-cyan-950/60 flex items-center gap-3 text-xs font-mono text-slate-500">
+                  <span className="text-cyan-400">&gt;</span> 64-frame ring buffer
+                  <span className="text-cyan-400">&gt;</span> Hermite spline interpolation
+                </div>
+              </div>
+
+              <div className="hud-card-accent p-6 rounded-2xl border border-cyan-950/80 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/80 px-2.5 py-1 rounded border border-cyan-800/40">
+                    [ DIRECTIVE 03: SPATIAL PARTITIONING ]
+                  </span>
+                  <Grid className="w-4 h-4 text-cyan-400" />
+                </div>
+
+                <h3 className="text-lg font-bold font-hud text-white group-hover:text-cyan-300 transition-colors">
+                  Sparse Hash Grid &amp; Network Culling
+                </h3>
+                <p className="text-slate-400 text-sm mt-2 leading-relaxed">
+                  Dynamic world grid partitioning (128x128 stud cells) using spatial hashing. Entities only replicate state updates to clients residing within active frustum and interest radius, keeping network traffic minimal even in massive 100+ player places.
+                </p>
+                <div className="mt-4 pt-4 border-t border-cyan-950/60 flex items-center gap-3 text-xs font-mono text-slate-500">
+                  <span className="text-cyan-400">&gt;</span> O(1) cell lookup
+                  <span className="text-cyan-400">&gt;</span> Interest radius filtering
+                </div>
+              </div>
+
+
+              <div className="hud-card-accent p-6 rounded-2xl border border-cyan-950/80 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-[11px] font-mono text-cyan-400 bg-cyan-950/80 px-2.5 py-1 rounded border border-cyan-800/40">
+                    [ DIRECTIVE 04: STRICT LUAU &amp; GUARDS ]
+                  </span>
+                  <Lock className="w-4 h-4 text-cyan-400" />
+                </div>
+
+                <h3 className="text-lg font-bold font-hud text-white group-hover:text-cyan-300 transition-colors">
+                  Server-Authoritative Anti-Tamper Protocol
+                </h3>
+                <p className="text-slate-400 text-sm mt-2 leading-relaxed">
+                  Never trust client inputs. Server enforces delta-time checks, physical raycast validation, cooldown timestamps, and buffer boundary assertion. Compile-time --!strict typing prevents runtime crashes.
+                </p>
+                <div className="mt-4 pt-4 border-t border-cyan-950/60 flex items-center gap-3 text-xs font-mono text-slate-500">
+                  <span className="text-cyan-400">&gt;</span> Typecheck guards
+                  <span className="text-cyan-400">&gt;</span> Timestamp rate limiters
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 05: PRODUCTION PROJECTS */}
+        <section id="projects" className="py-20 border-b border-cyan-950/60 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+              <div>
+                <div className="text-xs font-mono text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                  <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>[ 05 // SYSTEM MODULES ]</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black font-hud text-white mt-1">
+                  Engine Modules & Production Systems
+                </h2>
+                <p className="text-slate-400 text-sm mt-1 max-w-xl">
+                  Battle-tested Luau modules and physical architecture engineered for extreme reliability and high player concurrency.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {filterTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      soundFX.playClick();
+                      setProjectFilter(tab.id);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-hud font-semibold uppercase tracking-wider transition-all cursor-pointer ${
+                      projectFilter === tab.id
+                        ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20"
+                        : "bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-cyan-950 hover:border-cyan-800"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProjects.map((p, idx) => (
+                <div
+                  key={idx}
+                  className="hud-card-accent p-6 rounded-2xl border border-cyan-950/80 relative flex flex-col justify-between group"
+                >
+                  <div className="tech-bracket top-2 left-2" />
+                  <div className="tech-bracket bottom-2 right-2" />
+
+                  <div>
+                    <div className="flex items-center justify-between mb-3 text-xs font-mono">
+                      <span className="text-cyan-400/90 font-bold">{p.badge}</span>
+                      <span className="text-slate-500 text-[10px] uppercase px-2 py-0.5 rounded bg-slate-900 border border-slate-800">
+                        {p.category}
+                      </span>
+                    </div>
+
+                    <h3 className="text-lg font-bold font-hud text-white group-hover:text-cyan-300 transition-colors">
+                      {p.title}
+                    </h3>
+                    <p className="text-slate-400 text-xs sm:text-sm mt-2 leading-relaxed">
+                      {p.description}
+                    </p>
+
+                    <div className="mt-4 space-y-1.5">
+                      {p.features.map((feat, fIdx) => (
+                        <div key={fIdx} className="flex items-center gap-2 text-xs font-mono text-slate-300">
+                          <span className="text-cyan-400 font-bold">&gt;</span>
+                          <span>{feat}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-cyan-950/60 flex items-center justify-between">
+                    <div className="flex flex-wrap gap-1.5">
+                      {p.tech.map((t) => (
+                        <span
+                          key={t}
+                          className="text-[10px] font-mono text-cyan-300 bg-cyan-950/50 px-2 py-0.5 rounded border border-cyan-900/50"
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-[11px] font-mono text-emerald-400 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      ACTIVE
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 06: ENGINE MATRIX */}
+        <section id="stack" className="py-20 border-b border-cyan-950/60 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-10">
+              <div className="text-xs font-mono text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                <Cpu className="w-3.5 h-3.5 text-cyan-400" />
+                <span>[ 06 // ENGINE MATRIX ]</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black font-hud text-white mt-1">
+                Technical Capabilities & Toolchain
+              </h2>
+              <p className="text-slate-400 text-sm mt-1 max-w-xl">
+                Integrated development workflow spanning low-level Luau algorithms, modern toolchains, and profiling instrumentation.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="hud-panel p-5 rounded-xl border border-cyan-950/80">
+                <div className="text-xs font-mono text-cyan-400 uppercase mb-3 flex items-center gap-2">
+                  <Terminal className="w-4 h-4" />
+                  <span>Languages & Engine</span>
+                </div>
+                <ul className="space-y-2 text-xs font-mono text-slate-300">
+                  <li className="flex items-center justify-between"><span>Luau (--!strict)</span><span className="text-cyan-400">Mastery</span></li>
+                  <li className="flex items-center justify-between"><span>TypeScript (roblox-ts)</span><span className="text-slate-400">Advanced</span></li>
+                  <li className="flex items-center justify-between"><span>Roblox Studio API</span><span className="text-cyan-400">Mastery</span></li>
+                  <li className="flex items-center justify-between"><span>Node.js / tooling</span><span className="text-slate-400">Proficient</span></li>
+                  <li className="flex items-center justify-between"><span>GLSL / Shaders</span><span className="text-slate-400">Intermediate</span></li>
+                </ul>
+              </div>
+              <div className="hud-panel p-5 rounded-xl border border-cyan-950/80">
+                <div className="text-xs font-mono text-cyan-400 uppercase mb-3 flex items-center gap-2">
+                  <Activity className="w-4 h-4" />
+                  <span>Networking & Physics</span>
+                </div>
+                <ul className="space-y-2 text-xs font-mono text-slate-300">
+                  <li className="flex items-center justify-between"><span>Client Prediction</span><span className="text-cyan-400">Production</span></li>
+                  <li className="flex items-center justify-between"><span>Rollback Reconciliation</span><span className="text-cyan-400">Production</span></li>
+                  <li className="flex items-center justify-between"><span>Bit-Packing Buffers</span><span className="text-cyan-400">Production</span></li>
+                  <li className="flex items-center justify-between"><span>Spatial Hash Grids</span><span className="text-cyan-400">Production</span></li>
+                  <li className="flex items-center justify-between"><span>Delta Compression</span><span className="text-slate-400">Production</span></li>
+                </ul>
+              </div>
+
+              <div className="hud-panel p-5 rounded-xl border border-cyan-950/80">
+                <div className="text-xs font-mono text-cyan-400 uppercase mb-3 flex items-center gap-2">
+                  <Layers className="w-4 h-4" />
+                  <span>Tooling & Pipeline</span>
+                </div>
+                <ul className="space-y-2 text-xs font-mono text-slate-300">
+                  <li className="flex items-center justify-between"><span>Rojo 7.x</span><span className="text-cyan-400">Workflow</span></li>
+                  <li className="flex items-center justify-between"><span>Wally / Pesde</span><span className="text-cyan-400">Workflow</span></li>
+                  <li className="flex items-center justify-between"><span>Selene & StyLua</span><span className="text-cyan-400">CI/CD</span></li>
+                  <li className="flex items-center justify-between"><span>Blender 4.x (glTF/GLB)</span><span className="text-slate-400">Pipeline</span></li>
+                  <li className="flex items-center justify-between"><span>Git / GitHub Actions</span><span className="text-cyan-400">Standard</span></li>
+                </ul>
+              </div>
+
+              <div className="hud-panel p-5 rounded-xl border border-cyan-950/80">
+                <div className="text-xs font-mono text-cyan-400 uppercase mb-3 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Profiling & Security</span>
+                </div>
+                <ul className="space-y-2 text-xs font-mono text-slate-300">
+                  <li className="flex items-center justify-between"><span>MicroProfiler</span><span className="text-cyan-400">Diagnostic</span></li>
+                  <li className="flex items-center justify-between"><span>Luau ScriptProfiler</span><span className="text-cyan-400">Diagnostic</span></li>
+                  <li className="flex items-center justify-between"><span>Memory Breakdown</span><span className="text-cyan-400">Diagnostic</span></li>
+                  <li className="flex items-center justify-between"><span>Server Anti-Tamper</span><span className="text-cyan-400">Hardened</span></li>
+                  <li className="flex items-center justify-between"><span>Rate Limiting & Bounds</span><span className="text-cyan-400">Hardened</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 07: DIRECT TRANSMISSION TERMINAL */}
+        <section id="contact" className="py-20 relative">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="hud-panel p-8 sm:p-12 rounded-3xl border border-cyan-900/60 relative overflow-hidden">
+              <div className="tech-bracket top-3 left-3" />
+              <div className="tech-bracket bottom-3 right-3" />
+
+              <div className="text-center max-w-2xl mx-auto space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 font-mono text-xs">
+                  <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>[ TRANSMISSION LINK READY ]</span>
+                </div>
+
+                <h2 className="text-3xl sm:text-4xl font-black font-hud text-white">
+                  Initiate Comms with Naka.dev
+                </h2>
+
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  Available for technical direction, high-scale netcode architecture, Luau buffer optimizations, and competitive Roblox game development.
+                </p>
+
+                <div className="pt-4 flex flex-wrap justify-center gap-3">
+                  <a
+                    href="https://www.roblox.com/users/8824812500/profile"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-5 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-hud font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-cyan-500/20 flex items-center gap-2 cursor-pointer"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Roblox: Sankiyowo07</span>
+                  </a>
+                  <a
+                    href="https://saweria.co/Isanct"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-5 py-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 font-hud font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>Saweria Support</span>
+                  </a>
+
+                  <a
+                    href="https://github.com/Ihsan-ct"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 font-hud font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <GitBranch className="w-4 h-4 text-cyan-400" />
+                    <span>GitHub: Ihsan-ct</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* TACTICAL FOOTER */}
+        <footer className="border-t border-cyan-950/80 bg-[#04060a] py-8 text-xs font-mono text-slate-500 relative z-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-cyan-400 font-hud font-bold text-sm tracking-wider">Naka.dev</span>
+              <span>//</span>
+              <span>LUAU SYSTEMS ARCHITECT</span>
+            </div>
+
+            <div className="flex items-center gap-4 text-slate-400">
+              <span>LATENCY: 12ms</span>
+              <span>MEMORY: 42MB</span>
+              <span className="text-cyan-400">ROJO 7.7.1</span>
+            </div>
+
+            <div>
+              &copy; {new Date().getFullYear()} Naka Matri Wijaya. All rights reserved.
+            </div>
           </div>
         </footer>
-
       </div>
-
     </div>
   );
 }
+

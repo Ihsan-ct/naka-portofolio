@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { 
   Box, 
   Layers, 
@@ -10,17 +11,19 @@ import {
   Maximize2, 
   Minimize2, 
   Eye, 
-  Activity, 
-  Compass, 
   Cpu, 
   RefreshCw,
   Grid,
   Zap,
-  Tv
+  Tv,
+  Loader2,
+  Sparkles,
+  Mountain,
+  Radio
 } from 'lucide-react';
 import { soundFX } from './audio';
 
-export type PresetType = 'summit' | 'street' | 'netcode';
+export type PresetType = 'summit' | 'bc' | 'CPEnergy';
 export type RenderMode = 'shaded' | 'wireframe' | 'hitbox';
 export type LightingMood = 'cyberpunk' | 'sunset' | 'studio';
 
@@ -38,7 +41,12 @@ export default function Track3DViewer() {
   const [fps, setFps] = useState<number>(60);
   const [polyCount, setPolyCount] = useState<number>(0);
   const [vertexCount, setVertexCount] = useState<number>(0);
-  const [camDistance, setCamDistance] = useState<number>(36);
+  const [camDistance, setCamDistance] = useState<number>(46);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loadProgress, setLoadProgress] = useState<number>(0);
+  const gltfLoaderRef = useRef<GLTFLoader | null>(null);
+  const modelCacheRef = useRef<Map<string, THREE.Group>>(new Map());
+  const originalMaterialsRef = useRef<Map<string, THREE.Material | THREE.Material[]>>(new Map());
 
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -80,324 +88,82 @@ export default function Track3DViewer() {
     setVertexCount(Math.round(vertices));
   }, []);
 
-  const getMaterial = useCallback((
-    color: number | string, 
-    options: { 
-      emissive?: number | string; 
-      emissiveIntensity?: number; 
-      metalness?: number; 
-      roughness?: number;
-      transparent?: boolean;
-      opacity?: number;
-    } = {}
-  ): THREE.Material => {
-    if (renderMode === 'wireframe') {
-      return new THREE.MeshBasicMaterial({
-        color: options.emissive || color,
-        wireframe: true,
+  const ISLAND_PRESETS: Record<PresetType, { name: string; sub: string; file: string; source: string; tag: string; initialRadius: number; targetY: number }> = {
+    summit: { name: 'Citadel Bertingkat', sub: 'Pulau Summit Citadel', file: '/models/summit.glb', source: 'Workspace.PULAU.summit', tag: '508 Desc / 113 Meshes', initialRadius: 46, targetY: 6 },
+    bc: { name: 'Basecamp Sci-Fi', sub: 'Pulau Basecamp Modular', file: '/models/bc.glb', source: 'Workspace.PULAU.bc', tag: '618 Desc / 137 Meshes', initialRadius: 48, targetY: 5 },
+    CPEnergy: { name: 'Checkpoint Energy', sub: 'Checkpoint Gate Modular', file: '/models/CPEnergy.glb', source: 'Workspace.PULAU.CPEnergy', tag: '1025 Desc / 81 Meshes', initialRadius: 36, targetY: 4 }
+  };
+
+  const applyRenderMode = useCallback((group: THREE.Group, mode: RenderMode) => {
+    group.traverse((obj) => {
+      if ((obj as THREE.Mesh).isMesh) {
+        const mesh = obj as THREE.Mesh;
+        const orig = originalMaterialsRef.current.get(mesh.uuid);
+        if (mode === 'shaded') {
+          if (orig) mesh.material = orig;
+        } else if (mode === 'wireframe') {
+          mesh.material = new THREE.MeshBasicMaterial({ color: 0x06b6d4, wireframe: true });
+        } else if (mode === 'hitbox') {
+          mesh.material = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.45, wireframe: false });
+        }
+      }
+    });
+  }, []);
+
+  const loadIslandModel = useCallback((targetPreset: PresetType) => {
+    const trackGroup = trackGroupRef.current;
+    if (!trackGroup) return;
+    const meta = ISLAND_PRESETS[targetPreset];
+    sphericalRef.current.radius = meta.initialRadius;
+    sphericalRef.current.target.set(0, meta.targetY, 0);
+    setCamDistance(Math.round(meta.initialRadius));
+    while (trackGroup.children.length > 0) trackGroup.remove(trackGroup.children[0]);
+    const cached = modelCacheRef.current.get(targetPreset);
+    if (cached) {
+      trackGroup.add(cached);
+      applyRenderMode(trackGroup, renderMode);
+      updateStats(trackGroup);
+      setIsLoading(false);
+      return;
+    }
+    if (!gltfLoaderRef.current) gltfLoaderRef.current = new GLTFLoader();
+    setIsLoading(true);
+    setLoadProgress(15);
+    gltfLoaderRef.current.load(meta.file, (gltf) => {
+      const root = gltf.scene;
+      root.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh) {
+          const mesh = obj as THREE.Mesh;
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          if (!originalMaterialsRef.current.has(mesh.uuid)) originalMaterialsRef.current.set(mesh.uuid, mesh.material);
+        }
       });
-    }
-
-    if (renderMode === 'hitbox') {
-      return new THREE.MeshBasicMaterial({
-        color: color,
-        transparent: true,
-        opacity: options.opacity ?? 0.35,
-        wireframe: false,
-      });
-    }
-
-    return new THREE.MeshStandardMaterial({
-      color: color,
-      emissive: options.emissive ?? 0x000000,
-      emissiveIntensity: options.emissiveIntensity ?? 0.5,
-      metalness: options.metalness ?? 0.2,
-      roughness: options.roughness ?? 0.6,
-      transparent: options.transparent ?? false,
-      opacity: options.opacity ?? 1.0,
+      const box = new THREE.Box3().setFromObject(root);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const scale = 28 / (maxDim || 1);
+      root.position.x = -center.x * scale;
+      root.position.y = -box.min.y * scale;
+      root.position.z = -center.z * scale;
+      root.scale.setScalar(scale);
+      const containerGroup = new THREE.Group();
+      containerGroup.add(root);
+      modelCacheRef.current.set(targetPreset, containerGroup);
+      trackGroup.add(containerGroup);
+      applyRenderMode(trackGroup, renderMode);
+      updateStats(trackGroup);
+      setLoadProgress(100);
+      setTimeout(() => setIsLoading(false), 200);
+    }, (xhr) => {
+      if (xhr.total > 0) setLoadProgress(Math.round((xhr.loaded / xhr.total) * 100));
+      else setLoadProgress((p) => Math.min(95, p + 15));
+    }, (err) => {
+      console.error("GLTF error:", err);
+      setIsLoading(false);
     });
-  }, [renderMode]);
-
-  const addHitboxEdges = useCallback((mesh: THREE.Mesh, group: THREE.Group, edgeColor = 0x22d3ee) => {
-    if (renderMode === 'hitbox') {
-      const edges = new THREE.EdgesGeometry(mesh.geometry);
-      const line = new THREE.LineSegments(
-        edges, 
-        new THREE.LineBasicMaterial({ color: edgeColor, linewidth: 2 })
-      );
-      line.position.copy(mesh.position);
-      line.rotation.copy(mesh.rotation);
-      line.scale.copy(mesh.scale);
-      group.add(line);
-    }
-  }, [renderMode]);
-
-  const buildSummitScene = useCallback((group: THREE.Group) => {
-    const baseTiers = [
-      { rTop: 16, rBot: 20, h: 3, y: 1.5, color: 0x0f172a },
-      { rTop: 12, rBot: 16, h: 4, y: 5.0, color: 0x1e293b },
-      { rTop: 8,  rBot: 12, h: 5, y: 9.5, color: 0x334155 },
-      { rTop: 4,  rBot: 8,  h: 4, y: 14.0, color: 0x475569 },
-    ];
-    baseTiers.forEach((tier) => {
-      const geom = new THREE.CylinderGeometry(tier.rTop, tier.rBot, tier.h, 8);
-      const mat = getMaterial(tier.color, { roughness: 0.85, metalness: 0.1 });
-      const mesh = new THREE.Mesh(geom, mat);
-      mesh.position.y = tier.y;
-      group.add(mesh);
-      addHitboxEdges(mesh, group, 0x64748b);
-    });
-
-    const totalPads = 15;
-    for (let i = 0; i < totalPads; i++) {
-      const angle = i * 0.48;
-      const radius = 18 - i * 0.85;
-      const y = 1.0 + i * 1.05;
-      const x = Math.cos(angle) * radius;
-      const z = Math.sin(angle) * radius;
-
-      const padGeom = new THREE.BoxGeometry(2.4, 0.4, 2.4);
-      const isCyan = i % 2 === 0;
-      const padColor = isCyan ? 0x06b6d4 : 0xf59e0b;
-      const padMat = getMaterial(0x1e293b, {
-        emissive: padColor,
-        emissiveIntensity: 0.8,
-        metalness: 0.4,
-        roughness: 0.3
-      });
-      const padMesh = new THREE.Mesh(padGeom, padMat);
-      padMesh.position.set(x, y, z);
-      padMesh.rotation.y = -angle;
-      group.add(padMesh);
-      addHitboxEdges(padMesh, group, padColor);
-    }
-
-    const bridgeY = 7.0;
-    const pylonGeom = new THREE.CylinderGeometry(0.35, 0.35, 7, 8);
-    const pylonMat = getMaterial(0x64748b, { metalness: 0.6, roughness: 0.4 });
-    const p1 = new THREE.Mesh(pylonGeom, pylonMat);
-    p1.position.set(-6, bridgeY + 1.5, 10);
-    group.add(p1);
-    const p2 = new THREE.Mesh(pylonGeom, pylonMat);
-    p2.position.set(6, bridgeY + 1.5, 10);
-    group.add(p2);
-
-    const deckGeom = new THREE.BoxGeometry(12, 0.3, 2.2);
-    const deckMat = getMaterial(0x0284c7, {
-      emissive: 0x0369a1,
-      emissiveIntensity: 0.4,
-      metalness: 0.3,
-      roughness: 0.5
-    });
-    const deck = new THREE.Mesh(deckGeom, deckMat);
-    deck.position.set(0, bridgeY, 10);
-    group.add(deck);
-    addHitboxEdges(deck, group, 0x38bdf8);
-
-    const curve1 = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-6, bridgeY + 4.8, 10.9),
-      new THREE.Vector3(-2, bridgeY + 0.6, 10.9),
-      new THREE.Vector3(2, bridgeY + 0.6, 10.9),
-      new THREE.Vector3(6, bridgeY + 4.8, 10.9)
-    ]);
-    const cable1 = new THREE.Mesh(
-      new THREE.TubeGeometry(curve1, 32, 0.08, 8, false),
-      getMaterial(0x38bdf8, { emissive: 0x06b6d4, emissiveIntensity: 1.0 })
-    );
-    group.add(cable1);
-
-    const ringGeom = new THREE.TorusGeometry(1.8, 0.16, 16, 32);
-    const ringMat = getMaterial(0x10b981, { emissive: 0x10b981, emissiveIntensity: 1.2 });
-    const cp1 = new THREE.Mesh(ringGeom, ringMat);
-    cp1.position.set(0, bridgeY + 2, 10);
-    cp1.rotation.y = Math.PI / 2;
-    group.add(cp1);
-
-    const crystalGeom = new THREE.OctahedronGeometry(2.0, 0);
-    const crystalMat = getMaterial(0xec4899, {
-      emissive: 0xf43f5e,
-      emissiveIntensity: 1.5,
-      metalness: 0.1,
-      roughness: 0.2
-    });
-    const crystal = new THREE.Mesh(crystalGeom, crystalMat);
-    crystal.position.set(0, 18.5, 0);
-    crystal.name = 'apexCrystal';
-    group.add(crystal);
-    addHitboxEdges(crystal, group, 0xf43f5e);
-
-    const haloGeom = new THREE.TorusGeometry(3.2, 0.1, 16, 48);
-    const haloMat = getMaterial(0x06b6d4, { emissive: 0x06b6d4, emissiveIntensity: 1.8 });
-    const halo = new THREE.Mesh(haloGeom, haloMat);
-    halo.position.set(0, 18.5, 0);
-    halo.rotation.x = Math.PI / 2;
-    halo.name = 'apexHalo';
-    group.add(halo);
-  }, [getMaterial, addHitboxEdges]);
-
-  const buildStreetScene = useCallback((group: THREE.Group) => {
-    const groundGeom = new THREE.CylinderGeometry(28, 28, 0.6, 36);
-    const groundMat = getMaterial(0x090d16, { roughness: 0.95, metalness: 0.05 });
-    const ground = new THREE.Mesh(groundGeom, groundMat);
-    ground.position.y = -0.3;
-    group.add(ground);
-
-    const trackPoints = [
-      new THREE.Vector3(-16, 0.4, -10),
-      new THREE.Vector3(-6, 0.4, -18),
-      new THREE.Vector3(8, 0.4, -16),
-      new THREE.Vector3(18, 0.4, -6),
-      new THREE.Vector3(16, 2.5, 8),
-      new THREE.Vector3(4, 3.2, 16),
-      new THREE.Vector3(-8, 1.6, 12),
-      new THREE.Vector3(-18, 0.4, 2),
-    ];
-    const trackSpline = new THREE.CatmullRomCurve3(trackPoints, true);
-    
-    const roadGeom = new THREE.TubeGeometry(trackSpline, 96, 2.2, 8, true);
-    const roadMat = getMaterial(0x1e293b, {
-      roughness: 0.8,
-      metalness: 0.2,
-      emissive: 0x0f172a,
-      emissiveIntensity: 0.2
-    });
-    const roadMesh = new THREE.Mesh(roadGeom, roadMat);
-    group.add(roadMesh);
-    addHitboxEdges(roadMesh, group, 0x38bdf8);
-
-    const centerGeom = new THREE.TubeGeometry(trackSpline, 96, 0.08, 6, true);
-    const centerMat = getMaterial(0x38bdf8, { emissive: 0x06b6d4, emissiveIntensity: 2.0 });
-    const centerMesh = new THREE.Mesh(centerGeom, centerMat);
-    group.add(centerMesh);
-
-    for (let i = 0; i < 24; i++) {
-      const t = 0.45 + (i / 24) * 0.25;
-      const pt = trackSpline.getPoint(t);
-      const tangent = trackSpline.getTangent(t);
-      const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
-
-      const kerbGeom = new THREE.BoxGeometry(0.7, 0.25, 0.6);
-      const isRed = i % 2 === 0;
-      const kerbColor = isRed ? 0xef4444 : 0xffffff;
-      const kerbMat = getMaterial(kerbColor, {
-        emissive: isRed ? 0xb91c1c : 0x94a3b8,
-        emissiveIntensity: 0.6,
-        roughness: 0.5
-      });
-      const kerb = new THREE.Mesh(kerbGeom, kerbMat);
-      kerb.position.copy(pt).add(normal.clone().multiplyScalar(2.4));
-      kerb.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), tangent);
-      group.add(kerb);
-      addHitboxEdges(kerb, group, kerbColor);
-    }
-
-    const gantryX = -16;
-    const gantryZ = -10;
-    const colGeom = new THREE.BoxGeometry(0.5, 6, 0.5);
-    const colMat = getMaterial(0x475569, { metalness: 0.8, roughness: 0.2 });
-    
-    const colL = new THREE.Mesh(colGeom, colMat);
-    colL.position.set(gantryX - 3.2, 3, gantryZ);
-    group.add(colL);
-
-    const colR = new THREE.Mesh(colGeom, colMat);
-    colR.position.set(gantryX + 3.2, 3, gantryZ);
-    group.add(colR);
-
-    const beamGeom = new THREE.BoxGeometry(7, 0.8, 1.2);
-    const beamMat = getMaterial(0x0f172a, {
-      emissive: 0x06b6d4,
-      emissiveIntensity: 0.8,
-      metalness: 0.6
-    });
-    const beam = new THREE.Mesh(beamGeom, beamMat);
-    beam.position.set(gantryX, 5.8, gantryZ);
-    group.add(beam);
-    addHitboxEdges(beam, group, 0x06b6d4);
-
-    for (let l = 0; l < 5; l++) {
-      const ledGeom = new THREE.SphereGeometry(0.22, 12, 12);
-      const ledMat = getMaterial(0xef4444, { emissive: 0xff0000, emissiveIntensity: 2.2 });
-      const led = new THREE.Mesh(ledGeom, ledMat);
-      led.position.set(gantryX - 2.0 + l * 1.0, 5.8, gantryZ + 0.65);
-      group.add(led);
-    }
-  }, [getMaterial, addHitboxEdges]);
-
-  const buildNetcodeScene = useCallback((group: THREE.Group) => {
-    const hexGeom = new THREE.CylinderGeometry(20, 20, 0.8, 6);
-    const hexMat = getMaterial(0x030712, { roughness: 0.9, metalness: 0.2 });
-    const hex = new THREE.Mesh(hexGeom, hexMat);
-    hex.position.y = -0.4;
-    group.add(hex);
-    addHitboxEdges(hex, group, 0x3b82f6);
-
-    const gridLines = new THREE.GridHelper(34, 17, 0x06b6d4, 0x1e293b);
-    gridLines.position.y = 0.02;
-    group.add(gridLines);
-
-    const serverBoxGeom = new THREE.BoxGeometry(2.8, 5.2, 2.2);
-    const serverBoxMat = getMaterial(0x1d4ed8, {
-      emissive: 0x2563eb,
-      emissiveIntensity: 0.6,
-      transparent: true,
-      opacity: 0.65
-    });
-    const serverBox = new THREE.Mesh(serverBoxGeom, serverBoxMat);
-    serverBox.position.set(-5, 2.6, 0);
-    serverBox.name = 'serverHitbox';
-    group.add(serverBox);
-    addHitboxEdges(serverBox, group, 0x38bdf8);
-
-    const coreGeom = new THREE.SphereGeometry(0.5, 16, 16);
-    const coreMat = getMaterial(0x60a5fa, { emissive: 0x93c5fd, emissiveIntensity: 2.0 });
-    const core = new THREE.Mesh(coreGeom, coreMat);
-    core.position.set(-5, 2.6, 0);
-    group.add(core);
-
-    const clientBoxGeom = new THREE.BoxGeometry(2.8, 5.2, 2.2);
-    const clientBoxMat = getMaterial(0x06b6d4, {
-      emissive: 0x22d3ee,
-      emissiveIntensity: 0.8,
-      transparent: true,
-      opacity: 0.4
-    });
-    const clientBox = new THREE.Mesh(clientBoxGeom, clientBoxMat);
-    clientBox.position.set(5, 2.6, 2.5);
-    clientBox.name = 'clientHitbox';
-    group.add(clientBox);
-    addHitboxEdges(clientBox, group, 0x06b6d4);
-
-    const deltaPoints = [
-      new THREE.Vector3(-5, 2.6, 0),
-      new THREE.Vector3(0, 4.8, 1.25),
-      new THREE.Vector3(5, 2.6, 2.5)
-    ];
-    const deltaCurve = new THREE.CatmullRomCurve3(deltaPoints);
-    const deltaGeom = new THREE.TubeGeometry(deltaCurve, 24, 0.12, 8, false);
-    const deltaMat = getMaterial(0xec4899, { emissive: 0xf43f5e, emissiveIntensity: 2.2 });
-    const deltaMesh = new THREE.Mesh(deltaGeom, deltaMat);
-    group.add(deltaMesh);
-
-    for (let p = 0; p < 6; p++) {
-      const angle = (p / 6) * Math.PI * 2;
-      const px = Math.cos(angle) * 18;
-      const pz = Math.sin(angle) * 18;
-
-      const pylonGeom = new THREE.CylinderGeometry(0.4, 0.6, 8, 8);
-      const pylonMat = getMaterial(0x1e293b, { metalness: 0.8, roughness: 0.3 });
-      const pylon = new THREE.Mesh(pylonGeom, pylonMat);
-      pylon.position.set(px, 4, pz);
-      group.add(pylon);
-      addHitboxEdges(pylon, group, 0x64748b);
-
-      const laserGeom = new THREE.CylinderGeometry(0.08, 0.08, 12, 8);
-      const laserMat = getMaterial(0x06b6d4, { emissive: 0x38bdf8, emissiveIntensity: 2.5 });
-      const laser = new THREE.Mesh(laserGeom, laserMat);
-      laser.position.set(px, 6, pz);
-      group.add(laser);
-    }
-  }, [getMaterial, addHitboxEdges]);
+  }, [renderMode, applyRenderMode, updateStats]);
 
   const updateLighting = useCallback((scene: THREE.Scene, lightsGroup: THREE.Group) => {
     while (lightsGroup.children.length > 0) {
@@ -550,31 +316,14 @@ export default function Track3DViewer() {
   }, [autoRotate]);
 
   useEffect(() => {
-    const trackGroup = trackGroupRef.current;
-    if (!trackGroup) return;
+    loadIslandModel(preset);
+  }, [preset, loadIslandModel]);
 
-    while (trackGroup.children.length > 0) {
-      const obj = trackGroup.children[0];
-      trackGroup.remove(obj);
-      if ((obj as THREE.Mesh).isMesh) {
-        const mesh = obj as THREE.Mesh;
-        if (mesh.geometry) mesh.geometry.dispose();
-      }
+  useEffect(() => {
+    if (trackGroupRef.current) {
+      applyRenderMode(trackGroupRef.current, renderMode);
     }
-
-    if (preset === 'summit' ) {
-      buildSummitScene(trackGroup);
-      sphericalRef.current.target.set(0, 6, 0);
-    } else if (preset === 'street') {
-      buildStreetScene(trackGroup);
-      sphericalRef.current.target.set(0, 2, 0);
-    } else {
-      buildNetcodeScene(trackGroup);
-      sphericalRef.current.target.set(0, 3, 0);
-    }
-
-    updateStats(trackGroup);
-  }, [preset, renderMode, buildSummitScene, buildStreetScene, buildNetcodeScene, updateStats]);
+  }, [renderMode, applyRenderMode]);
 
   useEffect(() => {
     const scene = sceneRef.current;
@@ -619,10 +368,12 @@ export default function Track3DViewer() {
 
   const resetCamera = () => {
     soundFX.playClick();
-    sphericalRef.current.radius = 36;
+    const meta = ISLAND_PRESETS[preset];
+    sphericalRef.current.radius = meta.initialRadius;
     sphericalRef.current.theta = Math.PI / 4;
     sphericalRef.current.phi = Math.PI / 3;
-    setCamDistance(36);
+    sphericalRef.current.target.set(0, meta.targetY, 0);
+    setCamDistance(Math.round(meta.initialRadius));
   };
 
   const toggleFullscreen = () => {
@@ -651,6 +402,32 @@ export default function Track3DViewer() {
         className="w-full h-full block cursor-grab active:cursor-grabbing touch-none"
       />
 
+      {isLoading && (
+        <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md z-40 flex flex-col items-center justify-center gap-3 transition-opacity">
+          <div className="relative">
+            <Loader2 className="w-10 h-10 text-cyan-400 animate-spin" />
+            <Sparkles className="w-4 h-4 text-pink-400 absolute -top-1 -right-1 animate-pulse" />
+          </div>
+          <div className="flex flex-col items-center gap-1 font-mono text-center px-4">
+            <span className="text-sm font-bold text-white tracking-wide">Loading Authentic Blender GLB</span>
+            <span className="text-xs text-cyan-400">{ISLAND_PRESETS[preset].name} ({ISLAND_PRESETS[preset].file})</span>
+            <div className="w-56 h-1.5 bg-slate-800 rounded-full mt-2 overflow-hidden border border-slate-700">
+              <div className="h-full bg-gradient-to-r from-cyan-500 to-indigo-500 transition-all duration-200" style={{ width: String.fromCharCode(96)+loadProgress+String.fromCharCode(37)+String.fromCharCode(96) }} />
+            </div>
+            <span className="text-[10px] text-slate-400 mt-1">{loadProgress}% - PBR Shaders & Geometry</span>
+          </div>
+        </div>
+      )}
+
+      <div className="absolute top-18 sm:top-20 left-4 pointer-events-none z-20 flex flex-col gap-1 max-w-xs sm:max-w-sm">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-md border border-slate-800 text-[11px] font-mono text-slate-300">
+          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+          <span className="font-semibold text-cyan-300">{ISLAND_PRESETS[preset].name}</span>
+          <span className="text-slate-500">|</span>
+          <span className="text-slate-400">{ISLAND_PRESETS[preset].source}</span>
+        </div>
+      </div>
+
       {crtEffect && (
         <div className="absolute inset-0 pointer-events-none z-20 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.4)_50%)] bg-[length:100%_4px] opacity-75" />
       )}
@@ -666,32 +443,32 @@ export default function Track3DViewer() {
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
-            <Compass className="w-3.5 h-3.5" />
-            <span>Summit Obby</span>
+            <Mountain className="w-3.5 h-3.5" />
+            <span>Summit Citadel</span>
           </button>
 
           <button
-            onClick={() => { soundFX.playClick(); setPreset('street'); }}
+            onClick={() => { soundFX.playClick(); setPreset('bc'); }}
             className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all flex items-center gap-1.5 ${
-              preset === 'street'
+              preset === 'bc'
+                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <Radio className="w-3.5 h-3.5" />
+            <span>Basecamp Sci-Fi</span>
+          </button>
+
+          <button
+            onClick={() => { soundFX.playClick(); setPreset('CPEnergy'); }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all flex items-center gap-1.5 ${
+              preset === 'CPEnergy'
                 ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
                 : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
             }`}
           >
             <Zap className="w-3.5 h-3.5" />
-            <span>Street Track v5</span>
-          </button>
-
-          <button
-            onClick={() => { soundFX.playClick(); setPreset('netcode'); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all flex items-center gap-1.5 ${
-              preset === 'netcode'
-                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-            }`}
-          >
-            <Activity className="w-3.5 h-3.5" />
-            <span>Netcode Arena</span>
+            <span>Checkpoint Energy</span>
           </button>
         </div>
 

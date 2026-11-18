@@ -1,0 +1,1 @@
+export function RobloxIcon({ className = "w-4 h-4" }: { className?: string }) {  return (    <svg className={className} viewBox="0 0 24 24" fill="currentColor">      <path d="M5.167 0L0 18.833 18.833 24 24 5.167 5.167 0zm10.708 14.875l-5.625-1.542 1.542-5.625 5.625 1.542-1.542 5.625z" />    </svg>  );}
